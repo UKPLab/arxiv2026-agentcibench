@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AgentCIBench — Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<nav class="topnav">
+  <a class="brand" href="./"><span class="brand-mark">AgentCIBench</span></a>
+  <div class="navlinks">
+    <a href="./">Leaderboard</a>
+    <a href="#modes">Failure modes</a>
+    <a href="#pareto">Pareto</a>
+    <a href="#trajectory">Trajectories</a>
+    <a href="#compare">Compare</a>
+    <a href="#defenses">Defenses</a>
+    <a href="#e2e">End-to-end</a>
+  </div>
+  <div class="navcta">
+    <a class="btn btn-secondary" href="./">← Leaderboard</a>
+  </div>
+</nav>
+
+<main>
+
+<section class="hero compact">
+  <p class="eyebrow">Analysis</p>
+  <h1>What frontier agents actually leak.</h1>
+  <p class="lede">
+    Failure modes, paired comparisons, end-to-end UI trajectories, and three mitigations
+    that reduce leakage without hurting utility.
+  </p>
+</section>
+
+<section id="modes" class="block">
+  <h2>Three failure modes</h2>
+  <p>
+    Each scenario instantiates one CI-grounded failure mode. Below is one representative
+    scenario per mode, rendered as the OpenApps surface the agent actually sees.
+  </p>
+  <div class="modetabs">
+    <button class="modetab active" data-mode="VCL">VCL — Visual co-location</button>
+    <button class="modetab" data-mode="TAO">TAO — Task-ambiguity overshare</button>
+    <button class="modetab" data-mode="RMA">RMA — Recipient misalignment</button>
+  </div>
+  <div id="modePane"></div>
+</section>
+
+<section id="pareto" class="block">
+  <h2>Utility vs disclosure restraint</h2>
+  <p>
+    Task-completion utility does not predict disclosure restraint. Among agents with
+    <span class="kt">U &gt; 75%</span>, engaged leakage spans 14.0% (Claude-Opus-4.7)
+    to 98.3% (Gemini-3.1-Pro) — an 84-point spread.
+    Marker area scales with refusal rate; the dashed lines are at U=75 and L<sub>eng</sub>=50.
+  </p>
+  <div class="chartcard">
+    <div id="pareto-chart"></div>
+    <div class="legend" id="pareto-legend"></div>
+  </div>
+  <p class="caption">
+    Only Claude-Opus-4.7 sits in the "capable &amp; careful" quadrant.
+    GPT-5.4 reaches comparatively low leakage mainly via a 41.9% refusal rate (large marker, lower left).
+  </p>
+</section>
+
+<section id="trajectory" class="block">
+  <h2>End-to-end trajectory viewer</h2>
+  <p>
+    Runs from the deployment study, replayed step-by-step from the OpenApps screenshots
+    saved by the harness and paired with each run's final judge verdict.
+  </p>
+
+  <div class="trajviewer">
+    <div class="trajheader">
+      <label class="trajpick">
+        Trajectory
+        <select id="trajPick"></select>
+      </label>
+      <div class="trajbadges" id="trajBadges"></div>
+    </div>
+
+    <div class="trajprompt" id="trajPrompt"></div>
+
+    <div class="trajbody">
+      <div class="trajleft">
+        <div class="macwin">
+          <div class="macchrome">
+            <span class="tlight r"></span><span class="tlight y"></span><span class="tlight g"></span>
+            <span class="macurl" id="trajUrl">step 0</span>
+          </div>
+          <div class="screenshotwrap">
+            <img id="trajShot" alt="trajectory screenshot" />
+          </div>
+        </div>
+        <div class="trajcontrols">
+          <button class="btn btn-secondary" id="trajPrev">←</button>
+          <span class="trajstep">Step <span id="trajIdx">0</span> / <span id="trajTotal">20</span></span>
+          <button class="btn btn-secondary" id="trajNext">→</button>
+          <input type="range" min="0" max="20" value="0" id="trajRange" />
+        </div>
+      </div>
+      <div class="trajright">
+        <h4>Scenario state</h4>
+        <div class="scenariobox" id="trajState"></div>
+        <div id="trajFinal" hidden>
+          <h4>Final sent output (step 14+)</h4>
+          <div class="sentmsg" id="sentMsg"></div>
+          <div class="judgement" id="judgeBox"></div>
+        </div>
+        <div id="trajWaiting" class="trajwait">
+          <p>Walk the slider to the last step to reveal the agent's final output and the judge's verdict.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="compare" class="block">
+  <h2>Compare model outputs</h2>
+  <p>
+    Same scenario, two agents, side-by-side. Outputs are taken verbatim from
+    the released run artifacts: the literal <code>shared_content</code> the agent emitted, with must-share items highlighted in
+    green and must-not-share items highlighted in red.
+  </p>
+  <div class="comparepicker">
+    <label>Scenario<select id="cmpScenario"></select></label>
+    <label>Model A<select id="cmpA"></select></label>
+    <label>Model B<select id="cmpB"></select></label>
+  </div>
+  <div class="scenariobox" id="scenarioBox"></div>
+  <div class="cmpgrid">
+    <article class="cmpcard" id="cardA"></article>
+    <article class="cmpcard" id="cardB"></article>
+  </div>
+</section>
+
+<section id="defenses" class="block">
+  <h2>Mitigations</h2>
+  <p>
+    Three prompt-level defenses, swept across Claude-Opus-4.7, GPT-5.4, and DeepSeek-v4-Pro
+    (the three models that span the disclosure distribution). Engaged leakage drops by 33–36
+    points; utility rises by 16–23 points. The defenses are not a refusal-style intervention.
+  </p>
+
+  <div class="defenselist">
+    <div class="defcard">
+      <h4>Restrictive</h4>
+      <p>Read only the fields directly required by the task. Omit content from neighbouring rows.</p>
+    </div>
+    <div class="defcard">
+      <h4>Rubric-informed</h4>
+      <p>Four-point CI rubric in the system prompt: necessity, recipient appropriateness, source isolation, voice neutrality.</p>
+    </div>
+    <div class="defcard">
+      <h4>Recipient-typed</h4>
+      <p>List the recipient and the contextual norms appropriate for that recipient before emitting the output.</p>
+    </div>
+  </div>
+
+  <div class="chartcard">
+    <div id="defense-chart"></div>
+  </div>
+</section>
+
+<section id="e2e" class="block">
+  <h2>Does disclosure transfer to live UI?</h2>
+  <p>
+    Claude-Opus-4.7 and Claude-Sonnet-4.6 — the two lowest-leakage agents in the
+    state-grounded table — were deployed end-to-end in the rendered OpenApps UI on a
+    50-scenario stratified subset. On engaged runs, leakage stays at or above the
+    state-grounded baseline for both agents.
+  </p>
+  <div class="e2egrid" id="e2eGrid"></div>
+  <p class="caption">
+    State-grounded and end-to-end measurements are reported from the same benchmark scoring protocol.
+  </p>
+</section>
+
+</main>
+
+<footer>
+  <div class="footrow">
+    <a href="./">Leaderboard</a>
+    <a href="#">arXiv</a>
+    <a href="https://github.com/UKPLab/arxiv2026-agentcibench">GitHub</a>
+    <a href="https://huggingface.co/datasets/UKPLab/agentcibench">Scenario pool</a>
+    <a href="#">OpenApps</a>
+    <span class="sep">·</span>
+    <span class="copy">© 2026 AgentCIBench authors</span>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="analysis.js"></script>
+</body>
+</html>

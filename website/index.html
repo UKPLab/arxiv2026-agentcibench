@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AgentCIBench — Capable but Careless</title>
+<meta name="description" content="A re-runnable harness for testing contextual integrity in computer-use agents." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<nav class="topnav">
+  <a class="brand" href="./"><span class="brand-mark">AgentCIBench</span></a>
+  <div class="navlinks">
+    <a href="#leaderboard">Leaderboard</a>
+    <a href="#run">Run</a>
+    <a href="analysis.html">Analysis</a>
+    <a href="#paper">Paper</a>
+  </div>
+  <div class="navcta">
+    <a class="btn btn-secondary" href="analysis.html">Analysis &amp; trajectories →</a>
+    <a class="btn btn-primary" href="#run">Run benchmark</a>
+  </div>
+</nav>
+
+<main>
+
+<section class="hero">
+  <p class="eyebrow">Contextual integrity for computer-use agents</p>
+  <h1>Capable but careless.<br/>Do computer-use agents follow contextual integrity?</h1>
+  <p class="lede">
+    A re-runnable evaluation harness that turns disclosure risk in computer-use agents into
+    deterministically scored scenarios for contextual-integrity failures in everyday app workflows.
+  </p>
+  <div class="install-pill" id="installPill">
+    <span class="prompt">$</span>
+    <code>git clone https://github.com/UKPLab/arxiv2026-agentcibench.git</code>
+    <button class="copy" aria-label="Copy" onclick="copyInstall()">copy</button>
+  </div>
+</section>
+
+<section id="leaderboard" class="block">
+  <h2>Leaderboard</h2>
+  <p>
+    State-grounded results on the released scenario pool, paired across every agent. Refusal masks raw
+    leakage, so the primary disclosure metric is engagement-conditioned leakage
+    <span class="kt">L<sub>eng</sub> = L / (1 − R)</span>. Click any column to sort.
+  </p>
+  <div class="filters">
+    <button class="chip active" data-group="all">All</button>
+    <button class="chip" data-group="prop">Proprietary</button>
+    <button class="chip" data-group="open">Open weight</button>
+  </div>
+  <div class="leaderboard-wrap">
+    <div id="lb" class="leaderboard" aria-label="AgentCIBench leaderboard">
+      <div class="lb-head">
+        <button data-key="rank" class="rank" type="button">#</button>
+        <button data-key="model" type="button">Model</button>
+        <button data-key="group" type="button">Group</button>
+        <button data-key="util" class="metric-head" type="button">Utility ↑</button>
+        <button data-key="leak" class="metric-head" type="button">Leakage ↓</button>
+        <button data-key="refusal" class="metric-head" type="button">Refusal</button>
+        <button data-key="eng" class="metric-head" type="button">Engaged leakage ↓</button>
+      </div>
+      <div class="lb-body"></div>
+    </div>
+  </div>
+  <p class="caption">
+    Results are computed from the released benchmark artifacts. 95% bootstrap CIs are shown next to raw leakage.
+    The main takeaway is that task-completion utility does not predict disclosure restraint.
+  </p>
+  <p>
+    Continue to the <a href="analysis.html">analysis page</a> for the Pareto plot, end-to-end UI trajectories, side-by-side model output comparisons, and the defense sweep.
+  </p>
+</section>
+
+<section class="block">
+  <h2>What AgentCIBench measures</h2>
+  <p>
+    Each scenario is a tuple <code>(state, prompt, recipient, must_share, must_not_share)</code>.
+    The agent reads the user's app state, emits the externally visible output, and the harness scores
+    that output against the share/leak sets using a deterministic matcher plus an LLM judge. The
+    evaluated agents are never in the generation loop.
+  </p>
+  <div class="harness-flow">
+    <div class="hbox"><span class="hk">1</span><strong>28 seeds</strong><span>Hand-authored seed scenarios over everyday personal-assistant tasks.</span></div>
+    <div class="harrow">→</div>
+    <div class="hbox"><span class="hk">2</span><strong>MCTS engine</strong><span>UCB1 selection, CI-targeted mutations (VCL/TAO/RMA), proxy rollouts, novelty bonus.</span></div>
+    <div class="harrow">→</div>
+    <div class="hbox"><span class="hk">3</span><strong>OpenApps</strong><span>Six-app workspace on BrowserGym: Messenger, Calendar, Maps, ToDo, Code Editor, Shop.</span></div>
+    <div class="harrow">→</div>
+    <div class="hbox"><span class="hk">4</span><strong>Hybrid scorer</strong><span>Deterministic matcher + LLM judge merged conservatively into a single leak set.</span></div>
+  </div>
+  <p class="callout">
+    The released artifact is the generation pipeline plus the curated scenario pool —
+    not a frozen annotation set. The scenario pool can be regenerated or extended as proxy
+    models and frontier agents change.
+  </p>
+</section>
+
+<section id="run" class="block dark">
+  <h2>Run AgentCIBench on your agent</h2>
+  <p>
+    Drop in an agent, point the harness at the scenario pool, and get utility, raw leakage,
+    refusal, and engaged-leakage numbers in the same format as the table above.
+  </p>
+  <pre class="codecard dark"><span class="comment"># 1. clone the public release</span>
+git clone https://github.com/UKPLab/arxiv2026-agentcibench.git
+cd arxiv2026-agentcibench
+uv sync
+
+<span class="comment"># 2. optional: download the Hugging Face dataset artifact</span>
+huggingface-cli download UKPLab/agentcibench \
+  --repo-type dataset \
+  --local-dir agentcibench_release
+
+<span class="comment"># 3. run on the materialized JSON scenarios included in the code release</span>
+uv run python -m eval.run_benchmark \
+  --generated-dir data/generated_merged \
+  --proxy-model openrouter/your-provider/your-model \
+  --judge-model openrouter/google/gemma-4-31b-it \
+  --results-dir agentcibench_release/results
+
+<span class="comment"># 4. optional: end-to-end run in the rendered OpenApps UI</span>
+uv run python -m eval.run_visual_benchmark \
+  --scenarios-dir data/eval_set_e2e_50 \
+  --model-name openrouter/your-provider/your-model \
+  --use-litellm --access-mode mixed --max-steps 20 \
+  --judge-model openrouter/google/gemma-4-31b-it \
+  --results-dir agentcibench_release/e2e-results</pre>
+  <div class="darkrow">
+    <a class="btn btn-on-dark" href="https://github.com/UKPLab/arxiv2026-agentcibench">GitHub</a>
+    <a class="btn btn-on-dark-outline" href="#">arXiv preprint</a>
+    <a class="btn btn-on-dark-outline" href="https://huggingface.co/datasets/UKPLab/agentcibench">Scenario pool v1</a>
+    <a class="btn btn-on-dark-outline" href="https://huggingface.co/datasets/UKPLab/agentcibench">Logs &amp; aggregates</a>
+  </div>
+</section>
+
+<section id="paper" class="block">
+  <h2>Paper &amp; citation</h2>
+  <p>
+    <strong>Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?</strong>
+    Preprint release. arXiv citation details forthcoming.
+  </p>
+  <pre class="bibcard">@inproceedings{agentcibench2026,
+  title  = {Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?},
+  author = {Goel, Anmol and Gurevych, Iryna},
+  year   = {2026}
+}</pre>
+</section>
+
+</main>
+
+<footer>
+  <div class="footrow">
+    <a href="#">arXiv</a>
+    <a href="https://github.com/UKPLab/arxiv2026-agentcibench">GitHub</a>
+    <a href="https://huggingface.co/datasets/UKPLab/agentcibench">Scenario pool</a>
+    <a href="#">OpenApps</a>
+    <a href="analysis.html">Analysis</a>
+    <a href="#paper">BibTeX</a>
+    <span class="sep">·</span>
+    <span class="copy">© 2026 AgentCIBench authors</span>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="leaderboard.js"></script>
+</body>
+</html>
