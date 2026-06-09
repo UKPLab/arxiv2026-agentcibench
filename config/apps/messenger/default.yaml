@@ -1,5 +1,0 @@
-defaults:
-  - content: default
-  - appearance: default
-  
-database_path: ${databases_dir}/messenger.db

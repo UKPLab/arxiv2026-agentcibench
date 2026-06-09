@@ -1,8 +1,0 @@
-{
-  "input_total": 140,
-  "exact_duplicates_removed": 7,
-  "near_duplicates_removed": 16,
-  "kept_total": 117,
-  "prompt_threshold": 0.92,
-  "jaccard_threshold": 0.5
-}
