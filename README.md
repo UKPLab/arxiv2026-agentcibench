@@ -9,8 +9,6 @@
 
 ![AgentCIBench trajectory overview](agentcibench-trajectory-video.gif)
 
-[Download the MP4 version](agentcibench-trajectory-video.mp4).
-
 AgentCIBench is an evaluation harness that measures whether computer-use
 agents (CUAs) respect **contextual integrity (CI)** when operating across
 personal applications. It converts everyday cross-app requests into
@@ -150,7 +148,7 @@ link to the per-scenario JSONL output produced by `eval.run_benchmark`.
 ```bibtex
 @article{goel2026agentcibench,
   title   = {Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?},
-  author  = {Goel, Anmol and others},
+  author  = {Goel, Anmol and Gurevych, Iryna},
   journal = {arXiv preprint arXiv:PENDING},
   year    = {2026}
 }
