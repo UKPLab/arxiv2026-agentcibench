@@ -7,8 +7,8 @@ authors:
     given-names: Anmol
     email: anmol.goel@tu-darmstadt.de
     affiliation: Technical University of Darmstadt
-repository-code: "https://github.com/agentcibench/agentcibench"
-url: "https://agentcibench.github.io"
+repository-code: "https://github.com/UKPLab/arxiv2026-agentcibench"
+url: "https://ukplab.github.io/arxiv2026-agentcibench"
 license: Apache-2.0
 keywords:
   - contextual integrity
