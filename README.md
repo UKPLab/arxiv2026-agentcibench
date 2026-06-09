@@ -7,7 +7,9 @@
 [![License: Apache 2.0](https://img.shields.io/badge/code-Apache_2.0-blue.svg)](LICENSE)
 [![Data License: CC BY 4.0](https://img.shields.io/badge/data-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-<video src="agentcibench-trajectory-video.mp4" controls width="100%" title="AgentCIBench trajectory overview"></video>
+![AgentCIBench trajectory overview](agentcibench-trajectory-video.gif)
+
+[Download the MP4 version](agentcibench-trajectory-video.mp4).
 
 AgentCIBench is an evaluation harness that measures whether computer-use
 agents (CUAs) respect **contextual integrity (CI)** when operating across
