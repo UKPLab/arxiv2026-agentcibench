@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: "AgentCIBench: Capable but Careless --- Do Computer-Use Agents Follow Contextual Integrity?"
+message: "If you use this benchmark or the released code, please cite the accompanying paper."
+type: software
+authors:
+  - family-names: Goel
+    given-names: Anmol
+    email: anmol.goel@tu-darmstadt.de
+    affiliation: Technical University of Darmstadt
+repository-code: "https://github.com/agentcibench/agentcibench"
+url: "https://agentcibench.github.io"
+license: Apache-2.0
+keywords:
+  - contextual integrity
+  - computer-use agents
+  - privacy benchmark
+  - LLM evaluation
+  - agent safety
+preferred-citation:
+  type: article
+  title: "Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?"
+  authors:
+    - family-names: Goel
+      given-names: Anmol
+  year: 2026
+  journal: "arXiv preprint"
+  url: "https://arxiv.org/abs/PENDING"

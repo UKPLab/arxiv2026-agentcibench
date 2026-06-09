@@ -1,0 +1,30 @@
+# Optional: bring up the AgentCIBench runtime with persistent data and
+# results volumes. Convenient for running the benchmark across multiple
+# invocations without rebuilding the image.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.yml run --rm agentci bash
+#
+# Set API keys in a `.env` file at the repo root before invoking compose;
+# never commit that file.
+
+services:
+  agentci:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: agentcibench:latest
+    env_file:
+      - ../.env
+    environment:
+      USE_OPENROUTER: "1"
+    volumes:
+      - ../data:/app/data
+      - ../config:/app/config
+      - agentci-results:/app/data/results
+    working_dir: /app
+    stdin_open: true
+    tty: true
+
+volumes:
+  agentci-results:
