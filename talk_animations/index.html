@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentCIBench — Talk Animations</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#f8fafc; color:#0f172a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100vh; padding:40px 24px 60px; }
+
+  .header { max-width:920px; margin:0 auto 36px; }
+  .kicker { font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#2563eb; margin-bottom:10px; }
+  h1 { font-size:26px; font-weight:700; line-height:1.25; margin-bottom:8px; color:#0f172a; }
+  h1 span { color:#94a3b8; }
+  .byline { font-size:14px; color:#64748b; line-height:1.6; max-width:600px; }
+  .byline strong { color:#374151; }
+  .divider { height:1px; background:#e2e8f0; margin:22px 0; }
+
+  .grid { max-width:920px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+
+  .card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; text-decoration:none; color:inherit; display:flex; flex-direction:column; transition:border-color .15s, box-shadow .15s; }
+  .card:hover { border-color:#94a3b8; box-shadow:0 4px 16px #0f172a0d; }
+
+  .card-preview { height:130px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#f8fafc; border-bottom:1px solid #f1f5f9; }
+
+  .card-body { padding:12px 14px 14px; flex:1; display:flex; flex-direction:column; gap:5px; }
+  .fig-tag { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#94a3b8; }
+  .card-title { font-size:13px; font-weight:600; line-height:1.3; color:#0f172a; }
+  .card-desc { font-size:11px; color:#64748b; line-height:1.5; flex:1; }
+  .card-badge { display:inline-flex; align-items:center; gap:5px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:4px; padding:3px 8px; font-size:10px; color:#0369a1; font-weight:500; margin-top:4px; width:fit-content; }
+  .card-badge.sig { background:#faf5ff; border-color:#d8b4fe; color:#6d28d9; }
+  .card-badge.warn { background:#fff7ed; border-color:#fed7aa; color:#c2410c; }
+  .card-badge.green { background:#f0fdf4; border-color:#bbf7d0; color:#15803d; }
+
+  .open-btn { margin:0 14px 12px; background:#f8fafc; border:1px solid #e2e8f0; color:#374151; padding:7px 0; border-radius:6px; font-size:11px; text-align:center; transition:background .12s; letter-spacing:.02em; cursor:pointer; }
+  .card:hover .open-btn { background:#f1f5f9; }
+
+  .signature { border-color:#d8b4fe; }
+
+  footer { max-width:920px; margin:36px auto 0; font-size:11px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:14px; display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="kicker">AgentCIBench · arXiv 2026 · UKP Lab TU Darmstadt</div>
+  <h1>Capable but Careless<br><span>Talk Animations</span></h1>
+  <div class="byline">Six animated figures from <strong>AgentCIBench</strong>, measuring contextual-integrity violations in computer-use agents. <strong>11 of 15 frontier agents</strong> leak on &gt;50% of scenarios; the two highest-utility agents are also the leakiest.</div>
+  <div class="divider"></div>
+</div>
+
+<div class="grid">
+
+  <a class="card signature" href="fig3_agent_map.html" target="_blank">
+    <div class="card-preview"><canvas id="mini3" width="270" height="128"></canvas></div>
+    <div class="card-body">
+      <div class="fig-tag">Figure 3 · Signature Plot</div>
+      <div class="card-title">Agent Positioning Map</div>
+      <div class="card-desc">Axes reveal progressively, dots rise to their leakage position, quadrants labelled. Only one agent lands in "Capable &amp; Careful."</div>
+      <div class="card-badge sig">★ Signature animation</div>
+    </div>
+    <div class="open-btn">Open animation →</div>
+  </a>
+
+  <a class="card" href="fig5_trajectory.html" target="_blank">
+    <div class="card-preview"><canvas id="mini5" width="270" height="128"></canvas></div>
+    <div class="card-body">
+      <div class="fig-tag">Figure 5 · "Oh no" moment</div>
+      <div class="card-title">E2E Trajectory Replay</div>
+      <div class="card-desc">16-step timeline. Agent cycles 13 steps between ToDo list and Nora's chat, then sends all 12 items. Four leaks highlighted in red.</div>
+      <div class="card-badge warn">⚠ Real trajectory · verbatim</div>
+    </div>
+    <div class="open-btn">Open animation →</div>
+  </a>
+
+  <a class="card" href="fig12_refusal_masking.html" target="_blank">
+    <div class="card-preview"><canvas id="mini12" width="270" height="128"></canvas></div>
+    <div class="card-body">
+      <div class="fig-tag">Figure 12 · Refusal Masking</div>
+      <div class="card-title">Raw → Engaged Leakage</div>
+      <div class="card-desc">Blue raw bars appear, amber refusal gaps fill in, red engaged-leakage outlines overlay. GPT-5.4 hides 14 pts behind 41.9% refusal.</div>
+      <div class="card-badge">Gap = refusal hiding true risk</div>
+    </div>
+    <div class="open-btn">Open animation →</div>
+  </a>
+
+  <a class="card" href="fig13_rank_inversion.html" target="_blank">
+    <div class="card-preview"><canvas id="mini13" width="270" height="128"></canvas></div>
+    <div class="card-body">
+      <div class="fig-tag">Figure 13 · Rank Inversion</div>
+      <div class="card-title">Capability vs. Safety Shuffle</div>
+      <div class="card-desc">15 agents sorted by utility, then reshuffled by disclosure safety. Crossing lines mark inversions. Gemini-Pro: rank 1→15.</div>
+      <div class="card-badge">84 pt spread among high-utility agents</div>
+    </div>
+    <div class="open-btn">Open animation →</div>
+  </a>
+
+  <a class="card" href="fig15_behavior_decomp.html" target="_blank">
+    <div class="card-preview"><canvas id="mini15" width="270" height="128"></canvas></div>
+    <div class="card-body">
+      <div class="fig-tag">Figure 15 · Behaviour Decomp.</div>
+      <div class="card-title">Four-Way Scenario Breakdown</div>
+      <div class="card-desc">Segments animate in one at a time: clean → leaked → refused → hidden leak. Amber shows "refuse-and-be-safe" is a myth.</div>
+      <div class="card-badge warn">Incomplete runs still leak</div>
+    </div>
+    <div class="open-btn">Open animation →</div>
+  </a>
+
+  <a class="card" href="fig6_defenses.html" target="_blank">
+    <div class="card-preview"><canvas id="mini6" width="270" height="128"></canvas></div>
+    <div class="card-body">
+      <div class="fig-tag">Figure 6 · Mitigations</div>
+      <div class="card-title">Defense Privacy Filters</div>
+      <div class="card-desc">Three prompt-level defenses animate in as "filters." Leakage bars fall 33–36 pts while utility rises 16–23 pts simultaneously.</div>
+      <div class="card-badge green">−33–36 pp leak · +16–23 pp utility</div>
+    </div>
+    <div class="open-btn">Open animation →</div>
+  </a>
+
+</div>
+
+<footer>
+  <span>Anmol Goel &amp; Iryna Gurevych · UKP Lab, TU Darmstadt · AgentCIBench · arXiv 2026</span>
+  <span>github.com/UKPLab/arxiv2026-agentcibench</span>
+</footer>
+
+<script>
+const FC={anthropic:'#7c3aed',openai:'#2563eb',google:'#059669',xai:'#b45309',alibaba:'#dc2626',deepseek:'#4338ca',moonshot:'#ea580c',minimax:'#be185d',zhipu:'#0284c7'};
+const agents=[
+  {u:81.2,l:14.0,f:'anthropic'},{u:44.4,l:32.4,f:'openai'},{u:52.1,l:54.5,f:'anthropic'},
+  {u:52.1,l:65.1,f:'openai'},{u:78.6,l:91.5,f:'xai'},{u:88.0,l:94.0,f:'google'},
+  {u:82.1,l:97.4,f:'alibaba'},{u:96.6,l:98.3,f:'google'},{u:68.4,l:63.6,f:'minimax'},
+  {u:74.4,l:69.3,f:'google'},{u:82.9,l:77.6,f:'alibaba'},{u:65.8,l:78.5,f:'openai'},
+  {u:43.6,l:80.2,f:'moonshot'},{u:64.1,l:85.1,f:'deepseek'},{u:57.3,l:89.3,f:'zhipu'},
+];
+
+// Mini scatter (fig3)
+(()=>{
+  const c=document.getElementById('mini3'); const ctx=c.getContext('2d');
+  const W=c.width,H=c.height; const P=16;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#dc262610'; ctx.fillRect(W/2,P,W/2-P,H/2-P);
+  ctx.fillStyle='#16a34a10'; ctx.fillRect(W/2,H/2,W/2-P,H/2-P);
+  ctx.fillStyle='#64748b08'; ctx.fillRect(P,P,W/2-P,H-2*P);
+  ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(W/2,P); ctx.lineTo(W/2,H-P); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(P,H/2); ctx.lineTo(W-P,H/2); ctx.stroke();
+  agents.forEach(ag=>{
+    const x=P+(ag.u/100)*(W-2*P), y=P+(1-ag.l/100)*(H-2*P);
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle=FC[ag.f]+'bb'; ctx.fill();
+  });
+  const op=agents[0]; const ox=P+(op.u/100)*(W-2*P), oy=P+(1-op.l/100)*(H-2*P);
+  ctx.beginPath(); ctx.arc(ox,oy,7,0,Math.PI*2);
+  ctx.strokeStyle=FC.anthropic; ctx.lineWidth=2; ctx.stroke();
+})();
+
+// Mini trajectory (fig5)
+(()=>{
+  const c=document.getElementById('mini5'); const ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#f8fafc'; ctx.fillRect(8,14,W/2-12,H-22); ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1; ctx.strokeRect(8,14,W/2-12,H-22);
+  ctx.fillStyle='#f8fafc'; ctx.fillRect(W/2+4,14,W/2-12,H-22); ctx.strokeRect(W/2+4,14,W/2-12,H-22);
+  ctx.font='8px sans-serif'; ctx.fillStyle='#64748b'; ctx.fillText('OpenTodos',12,26); ctx.fillText('OpenMessages',W/2+8,26);
+  const leaked=[4,5,6,7];
+  for(let i=0;i<12;i++){
+    ctx.fillStyle=leaked.includes(i)?'#fecaca':'#e2e8f0';
+    ctx.fillRect(14,32+i*7,W/2-22,5);
+  }
+  ctx.fillStyle='#eff6ff'; ctx.fillRect(W/2+8,30,W/2-16,45);
+  ctx.strokeStyle='#bfdbfe'; ctx.lineWidth=1; ctx.strokeRect(W/2+8,30,W/2-16,45);
+  ctx.fillStyle='#dc2626'; ctx.font='bold 8px sans-serif'; ctx.fillText('⚠ 4 private items leaked',W/2+12,56);
+})();
+
+// Mini refusal masking (fig12)
+(()=>{
+  const c=document.getElementById('mini12'); const ctx=c.getContext('2d');
+  const W=c.width,H=c.height; const P=8;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const sorted=[...agents].sort((a,b)=>a.l-b.l);
+  const bw=(W-2*P)/sorted.length*0.5, gap=(W-2*P)/sorted.length;
+  sorted.forEach((ag,i)=>{
+    const x=P+gap*(i+0.5)-bw/2;
+    const rh=(ag.l/100)*(H-20);
+    ctx.fillStyle='#dbeafe'; ctx.fillRect(x,H-16-rh,bw,rh);
+    ctx.strokeStyle='#2563eb'; ctx.lineWidth=0.8; ctx.strokeRect(x,H-16-rh,bw,rh);
+    if(ag.l<ag.leng||(ag.u<50)){
+      const gh=((ag.leng??ag.l*1.1)-ag.l)/100*(H-20);
+      ctx.fillStyle='#fef3c7'; ctx.fillRect(x,H-16-rh-gh,bw,gh);
+    }
+  });
+  ctx.fillStyle='#e2e8f0'; ctx.fillRect(0,H-16,W,1);
+})();
+
+// Mini bump chart (fig13)
+(()=>{
+  const c=document.getElementById('mini13'); const ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const byU=[{n:"Gemini-Pro",f:'google'},{n:"G-Flash",f:'google'},{n:"Qwen-Max",f:'alibaba'},{n:"Opus 4.7",f:'anthropic'},{n:"Grok-4.3",f:'xai'}];
+  const byD=[{n:"Opus 4.7",f:'anthropic'},{n:"G-Flash",f:'google'},{n:"Qwen-Max",f:'alibaba'},{n:"Grok-4.3",f:'xai'},{n:"Gemini-Pro",f:'google'}];
+  const rh=(H-20)/5, LX=28, RX=W-28;
+  byU.forEach((ag,i)=>{
+    const di=byD.findIndex(a=>a.n===ag.n);
+    const ly=14+i*rh, ry=14+di*rh;
+    const inv=i!==di;
+    ctx.strokeStyle=inv?FC[ag.f]+'aa':'#e2e8f0'; ctx.lineWidth=inv?1.5:1;
+    ctx.beginPath(); ctx.moveTo(LX,ly); ctx.bezierCurveTo(W/2,ly,W/2,ry,RX,ry); ctx.stroke();
+    ctx.fillStyle=FC[ag.f]; ctx.beginPath(); ctx.arc(LX,ly,3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(RX,ry,3,0,Math.PI*2); ctx.fill();
+  });
+})();
+
+// Mini behavior decomp (fig15)
+(()=>{
+  const c=document.getElementById('mini15'); const ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const data=[[70,11,16,3],[31,14,50,5],[28,24,26,22],[29,40,13,18],[21,32,19,29],[3,40,34,22],[23,43,12,23],[24,50,8,17],[19,64,4,13],[11,53,6,30],[8,49,6,37],[7,72,1,20],[6,82,1,11],[2,80,0,18],[2,95,0,3]];
+  const cols=['#16a34a88','#dc262688','#94a3b888','#d9770688'];
+  const bh=H/data.length-1;
+  data.forEach((row,i)=>{let x=0; row.forEach((v,j)=>{ctx.fillStyle=cols[j]; ctx.fillRect(x/100*W,i*(bh+1),v/100*W,bh); x+=v;});});
+})();
+
+// Mini defenses (fig6)
+(()=>{
+  const c=document.getElementById('mini6'); const ctx=c.getContext('2d');
+  const W=c.width,H=c.height; const P=12;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const defs=[{u:63.2,l:51.7},{u:78.9,l:19.0},{u:79.2,l:15.8},{u:86.3,l:16.2}];
+  const gw=(W-2*P)/defs.length, bw=14;
+  defs.forEach((d,i)=>{
+    const cx=P+gw*(i+0.5);
+    const uh=(d.u/100)*(H-20), lh=(d.l/100)*(H-20);
+    ctx.fillStyle='#dbeafe'; ctx.fillRect(cx-bw-3,H-14-uh,bw,uh); ctx.strokeStyle='#2563eb'; ctx.lineWidth=1; ctx.strokeRect(cx-bw-3,H-14-uh,bw,uh);
+    ctx.fillStyle='#fee2e2'; ctx.fillRect(cx+3,H-14-lh,bw,lh); ctx.strokeStyle='#dc2626'; ctx.strokeRect(cx+3,H-14-lh,bw,lh);
+  });
+  ctx.fillStyle='#e2e8f0'; ctx.fillRect(0,H-14,W,1);
+  ctx.fillStyle='#16a34a'; ctx.font='bold 8px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('↓ leak  ↑ utility',W/2,H-3);
+})();
+</script>
+</body>
+</html>

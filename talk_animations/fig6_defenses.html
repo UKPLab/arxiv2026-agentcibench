@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Figure 6 — Defense Privacy Filters</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#fff; color:#0f172a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+  h1 { font-size:13px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#64748b; }
+  .subtitle { font-size:12px; color:#94a3b8; text-align:center; }
+  canvas { display:block; border:1px solid #e2e8f0; border-radius:8px; background:#fff; }
+  .ctrl { display:flex; align-items:center; gap:12px; }
+  .ctrl-btn { background:#f8fafc; border:1px solid #e2e8f0; color:#374151; padding:7px 18px; border-radius:6px; font-size:12px; cursor:pointer; }
+  .ctrl-btn:hover { background:#f1f5f9; }
+  .ctrl-btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .ctrl-btn.primary:hover { background:#1d4ed8; }
+  .step-info { display:flex; flex-direction:column; align-items:center; min-width:300px; gap:2px; }
+  .step-lbl { font-size:11px; color:#2563eb; letter-spacing:.03em; height:15px; text-align:center; }
+  .step-num { font-size:10px; color:#cbd5e1; }
+  .key-hint { font-size:10px; color:#cbd5e1; }
+</style>
+</head>
+<body>
+<h1>Defense Privacy Filters</h1>
+<div class="subtitle">Three prompt interventions · averaged across Claude-Opus-4.7, GPT-5.4, DeepSeek-v4-Pro</div>
+<canvas id="c" width="760" height="400"></canvas>
+<div class="ctrl">
+  <button class="ctrl-btn" id="backBtn">← Back</button>
+  <div class="step-info">
+    <div class="step-lbl" id="stepLbl">Press Next or → to begin</div>
+    <div class="step-num" id="stepNum">0 / 4</div>
+  </div>
+  <button class="ctrl-btn primary" id="nextBtn">Next →</button>
+</div>
+<div class="key-hint">Space / → to advance &nbsp;·&nbsp; ← to go back</div>
+
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const W=canvas.width,H=canvas.height;
+const PAD={l:60,r:30,t:38,b:110};
+const CW=W-PAD.l-PAD.r,CH=H-PAD.t-PAD.b;
+
+const defenses=[
+  {label:'No Defense',    desc:'Baseline',                    u:63.2,l:51.7,col:'#6b7280'},
+  {label:'Restrictive',   desc:'Read only required fields',    u:78.9,l:19.0,col:'#2563eb'},
+  {label:'Rubric-informed',desc:'4-pt CI rubric in sys-prompt',u:79.2,l:15.8,col:'#16a34a'},
+  {label:'Recipient-typed',desc:'Name recipient + norms first', u:86.3,l:16.2,col:'#7c3aed'},
+];
+const N=defenses.length;
+const GW=CW/N, BW=38, BG=10;
+
+// Phase system — each phase reveals one more bar group
+const MAX_PHASE=4;
+let phase=0;
+
+// Animated heights for each defense { u, l }
+const heights=defenses.map(()=>({u:0,l:0}));
+const anims=[]; // { idx, fromU, fromL, toU, toL, start }
+const ANIM_DUR=700;
+function ease(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+
+function setPhase(p){
+  phase=Math.max(0,Math.min(p,MAX_PHASE));
+  const now=performance.now();
+  // Show defenses 0..phase-1
+  defenses.forEach((def,i)=>{
+    const toU=i<phase?(def.u/100)*CH:0;
+    const toL=i<phase?(def.l/100)*CH:0;
+    if(Math.abs(toU-heights[i].u)>1||Math.abs(toL-heights[i].l)>1){
+      anims.push({idx:i,fromU:heights[i].u,fromL:heights[i].l,toU,toL,start:now});
+    }
+  });
+  const PHASE_LABELS=['Press Next or → to begin','Baseline — no defense: U=63.2%, L=51.7%','Restrictive: read only required fields. Leakage −33 pts.','Rubric-informed: 4-point CI rubric in system prompt.','Recipient-typed: name recipient + norms first. Best of all three.'];
+  document.getElementById('stepLbl').textContent=PHASE_LABELS[phase];
+  document.getElementById('stepNum').textContent=phase+' / '+MAX_PHASE;
+  document.getElementById('backBtn').disabled=phase===0;
+  document.getElementById('nextBtn').disabled=phase===MAX_PHASE;
+}
+
+function groupCX(i){return PAD.l+GW*(i+0.5);}
+function toY(v){return PAD.t+CH-(v/100)*CH;}
+
+function render(now){
+  // Update animations
+  for(let k=anims.length-1;k>=0;k--){
+    const a=anims[k];
+    const p=Math.min((now-a.start)/ANIM_DUR,1);
+    const e=ease(p);
+    heights[a.idx].u=a.fromU+(a.toU-a.fromU)*e;
+    heights[a.idx].l=a.fromL+(a.toL-a.fromL)*e;
+    if(p>=1){heights[a.idx].u=a.toU; heights[a.idx].l=a.toL; anims.splice(k,1);}
+  }
+
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  // Grid + axes
+  ctx.strokeStyle='#f1f5f9'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+  [0,20,40,60,80,100].forEach(v=>{
+    const y=toY(v); ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+CW,y); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,PAD.t+CH); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t+CH); ctx.lineTo(PAD.l+CW,PAD.t+CH); ctx.stroke();
+  ctx.fillStyle='#94a3b8'; ctx.font='11px -apple-system,sans-serif'; ctx.textAlign='right';
+  [0,20,40,60,80,100].forEach(v=>ctx.fillText(v+'%',PAD.l-8,toY(v)+4));
+  ctx.save(); ctx.translate(13,PAD.t+CH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#64748b'; ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText('Rate (%)',0,0); ctx.restore();
+
+  // Bars
+  defenses.forEach((def,i)=>{
+    const cx=groupCX(i);
+    const uh=heights[i].u, lh=heights[i].l;
+    if(uh<=0&&lh<=0) return;
+
+    // Utility bar (left)
+    const ux=cx-BG/2-BW;
+    ctx.fillStyle='#dbeafe'; ctx.fillRect(ux,PAD.t+CH-uh,BW,uh);
+    ctx.strokeStyle='#2563eb'; ctx.lineWidth=1.5; ctx.strokeRect(ux,PAD.t+CH-uh,BW,uh);
+    if(uh>22){ctx.fillStyle='#1e40af'; ctx.font='bold 11px -apple-system,sans-serif'; ctx.textAlign='center'; ctx.fillText(def.u+'%',ux+BW/2,PAD.t+CH-uh+14);}
+
+    // Leakage bar (right)
+    const lx=cx+BG/2;
+    ctx.fillStyle='#fee2e2'; ctx.fillRect(lx,PAD.t+CH-lh,BW,lh);
+    ctx.strokeStyle='#dc2626'; ctx.lineWidth=1.5; ctx.strokeRect(lx,PAD.t+CH-lh,BW,lh);
+    if(lh>22){ctx.fillStyle='#991b1b'; ctx.font='bold 11px -apple-system,sans-serif'; ctx.textAlign='center'; ctx.fillText(def.l+'%',lx+BW/2,PAD.t+CH-lh+14);}
+  });
+
+  // X-axis labels — all at same y (PAD.t+CH), guaranteed by canvas
+  defenses.forEach((def,i)=>{
+    const cx=groupCX(i);
+    const baseY=PAD.t+CH;
+    ctx.fillStyle=def.col; ctx.font='bold 12px -apple-system,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(def.label,cx,baseY+20);
+    ctx.fillStyle='#94a3b8'; ctx.font='10px -apple-system,sans-serif';
+    ctx.fillText(def.desc,cx,baseY+34);
+    if(i>0&&heights[i].u>10){
+      const du=(def.u-defenses[0].u).toFixed(1);
+      const dl=Math.abs(def.l-defenses[0].l).toFixed(1);
+      ctx.fillStyle='#16a34a'; ctx.font='bold 10px -apple-system,sans-serif';
+      ctx.fillText('+'+du+'% U  −'+dl+'% L',cx,baseY+50);
+    }
+  });
+
+  // Legend
+  const lx=PAD.l+CW-160, ly=PAD.t+12;
+  ctx.fillStyle='#dbeafe'; ctx.fillRect(lx,ly-10,14,14); ctx.strokeStyle='#2563eb'; ctx.lineWidth=1.5; ctx.strokeRect(lx,ly-10,14,14);
+  ctx.fillStyle='#374151'; ctx.font='11px -apple-system,sans-serif'; ctx.textAlign='left'; ctx.fillText('Utility',lx+18,ly+2);
+  ctx.fillStyle='#fee2e2'; ctx.fillRect(lx+70,ly-10,14,14); ctx.strokeStyle='#dc2626'; ctx.strokeRect(lx+70,ly-10,14,14);
+  ctx.fillText('Leakage',lx+88,ly+2);
+
+  requestAnimationFrame(render);
+}
+
+document.getElementById('nextBtn').onclick=()=>setPhase(phase+1);
+document.getElementById('backBtn').onclick=()=>setPhase(phase-1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();setPhase(phase+1);}
+  if(e.key==='ArrowLeft'){e.preventDefault();setPhase(phase-1);}
+});
+setPhase(0);
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

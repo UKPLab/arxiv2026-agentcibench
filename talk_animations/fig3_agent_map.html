@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Figure 3 — Agent Positioning Map</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#fff; color:#0f172a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; overflow:hidden; }
+  h1 { font-size:13px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#64748b; }
+  canvas { display:block; border:1px solid #e2e8f0; border-radius:8px; background:#fff; }
+  .ctrl { display:flex; align-items:center; gap:12px; margin-top:10px; }
+  .ctrl-btn { background:#f8fafc; border:1px solid #e2e8f0; color:#374151; padding:7px 18px; border-radius:6px; font-size:12px; cursor:pointer; }
+  .ctrl-btn:hover { background:#f1f5f9; }
+  .ctrl-btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .ctrl-btn.primary:hover { background:#1d4ed8; }
+  .step-info { display:flex; flex-direction:column; align-items:center; min-width:220px; gap:2px; }
+  .step-lbl { font-size:11px; color:#2563eb; letter-spacing:.04em; height:15px; text-align:center; }
+  .step-num { font-size:10px; color:#cbd5e1; }
+  .key-hint { font-size:10px; color:#cbd5e1; }
+</style>
+</head>
+<body>
+<h1>Agent Positioning Map · Capability vs. Disclosure</h1>
+<canvas id="c" width="820" height="490"></canvas>
+<div class="ctrl">
+  <button class="ctrl-btn" id="backBtn">← Back</button>
+  <div class="step-info">
+    <div class="step-lbl" id="stepLbl">Press Next or → to begin</div>
+    <div class="step-num" id="stepNum">0 / 6</div>
+  </div>
+  <button class="ctrl-btn primary" id="nextBtn">Next →</button>
+</div>
+<div class="key-hint">Space / → to advance &nbsp;·&nbsp; ← to go back</div>
+
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const W=canvas.width,H=canvas.height;
+const PAD={l:72,r:40,t:28,b:54};
+const CW=W-PAD.l-PAD.r, CH=H-PAD.t-PAD.b;
+
+const FC={anthropic:'#7c3aed',openai:'#2563eb',google:'#059669',xai:'#b45309',alibaba:'#dc2626',deepseek:'#4338ca',moonshot:'#ea580c',minimax:'#be185d',zhipu:'#0284c7'};
+
+const agents=[
+  {name:"Opus 4.7",    short:"Opus 4.7",   u:81.2,l:14.0,r:1.7, f:'anthropic'},
+  {name:"GPT-5.4",     short:"GPT-5.4",    u:44.4,l:32.4,r:41.9,f:'openai'},
+  {name:"Sonnet 4.6",  short:"Sonnet 4.6", u:52.1,l:54.5,r:15.4,f:'anthropic'},
+  {name:"GPT-5.4-mini",short:"5.4-mini",   u:52.1,l:65.1,r:6.8, f:'openai'},
+  {name:"Grok-4.3",    short:"Grok-4.3",   u:78.6,l:91.5,r:0,   f:'xai'},
+  {name:"Gemini-Flash",short:"G-Flash",    u:88.0,l:94.0,r:0.9, f:'google'},
+  {name:"Qwen-3.6-Max",short:"Qwen-Max",   u:82.1,l:97.4,r:0,   f:'alibaba'},
+  {name:"Gemini-Pro",  short:"G-Pro",      u:96.6,l:98.3,r:0,   f:'google'},
+  {name:"MiniMax",     short:"MiniMax",    u:68.4,l:63.6,r:8.5, f:'minimax'},
+  {name:"Gemma-26B",   short:"Gemma-26B",  u:74.4,l:69.3,r:2.6, f:'google'},
+  {name:"Qwen-35B",    short:"Qwen-35B",   u:82.9,l:77.6,r:0.9, f:'alibaba'},
+  {name:"GPT-OSS-120B",short:"OSS-120B",   u:65.8,l:78.5,r:16.2,f:'openai'},
+  {name:"Kimi-K2.6",   short:"Kimi-K2.6",  u:43.6,l:80.2,r:22.2,f:'moonshot'},
+  {name:"DeepSeek",    short:"DeepSeek",   u:64.1,l:85.1,r:2.6, f:'deepseek'},
+  {name:"GLM-5.1",     short:"GLM-5.1",    u:57.3,l:89.3,r:4.3, f:'zhipu'},
+];
+
+function toX(u){return PAD.l+(u/100)*CW;}
+function toY(l){return PAD.t+CH-(l/100)*CH;}
+
+// ── Phase system ──────────────────────────────────────────
+// State: each value 0→1, animated when phase advances
+const state={axis:0,dots:0,yAxis:0,rise:0,quads:0,labels:0,opus:0};
+const PHASES=[
+  {label:'',              targets:{}},
+  {label:'Drawing axes',  targets:{axis:1}},
+  {label:'Utility positions (x-axis only)', targets:{dots:1}},
+  {label:'Revealing leakage axis', targets:{yAxis:1,rise:1}},
+  {label:'Quadrant boundaries (U=75%, L=50%)', targets:{quads:1}},
+  {label:'Naming quadrants', targets:{labels:1}},
+  {label:'Capable & Careful: only one agent.', targets:{opus:1}},
+];
+const MAX_PHASE=PHASES.length-1;
+let phase=0;
+
+// Accumulated targets
+const target={...state};
+// Per-key animation: { from, to, start, dur }
+const anims={};
+const ANIM_DUR=700;
+
+function ease(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+
+function setPhase(p){
+  phase=Math.max(0,Math.min(p,MAX_PHASE));
+  const now=performance.now();
+  // Accumulate all targets up to current phase
+  const acc={...state};
+  for(let i=0;i<=phase;i++) Object.assign(acc,PHASES[i].targets);
+  Object.keys(acc).forEach(k=>{
+    if(Math.abs(acc[k]-state[k])>0.001){
+      anims[k]={from:state[k],to:acc[k],start:now,dur:ANIM_DUR};
+    }
+    target[k]=acc[k];
+  });
+  document.getElementById('stepLbl').textContent=PHASES[phase].label;
+  document.getElementById('stepNum').textContent=phase+' / '+MAX_PHASE;
+  document.getElementById('backBtn').disabled=phase===0;
+  document.getElementById('nextBtn').disabled=phase===MAX_PHASE;
+}
+
+function updateAnims(now){
+  Object.keys(anims).forEach(k=>{
+    const a=anims[k];
+    const p=Math.min((now-a.start)/a.dur,1);
+    state[k]=a.from+(a.to-a.from)*ease(p);
+    if(p>=1){state[k]=a.to; delete anims[k];}
+  });
+}
+
+// ── Draw ──────────────────────────────────────────────────
+function drawAxes(alpha){
+  if(alpha<=0) return;
+  ctx.save(); ctx.globalAlpha=alpha;
+  ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t+CH); ctx.lineTo(PAD.l+CW,PAD.t+CH); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,PAD.t+CH); ctx.stroke();
+  ctx.strokeStyle='#f1f5f9'; ctx.setLineDash([3,5]);
+  for(let v=20;v<=100;v+=20){
+    ctx.beginPath(); ctx.moveTo(toX(v),PAD.t); ctx.lineTo(toX(v),PAD.t+CH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD.l,toY(v)); ctx.lineTo(PAD.l+CW,toY(v)); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.fillStyle='#94a3b8'; ctx.font='11px -apple-system,sans-serif'; ctx.textAlign='center';
+  for(let v=0;v<=100;v+=20) ctx.fillText(v+'%',toX(v),PAD.t+CH+16);
+  ctx.fillStyle='#374151'; ctx.font='12px -apple-system,sans-serif';
+  ctx.fillText('Utility rate  →',PAD.l+CW/2,H-6);
+  ctx.restore();
+}
+
+function drawYAxis(alpha){
+  if(alpha<=0) return;
+  ctx.save(); ctx.globalAlpha=alpha;
+  ctx.fillStyle='#94a3b8'; ctx.font='11px -apple-system,sans-serif'; ctx.textAlign='right';
+  for(let v=0;v<=100;v+=20) ctx.fillText(v+'%',PAD.l-8,toY(v)+4);
+  ctx.save(); ctx.translate(14,PAD.t+CH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#374151'; ctx.font='12px -apple-system,sans-serif'; ctx.textAlign='center';
+  ctx.fillText('↑  Engagement-conditioned leakage',0,0);
+  ctx.restore(); ctx.restore();
+}
+
+function drawQuadrants(alpha){
+  if(alpha<=0) return;
+  ctx.save(); ctx.globalAlpha=alpha*0.09;
+  ctx.fillStyle='#16a34a'; ctx.fillRect(toX(75),toY(50),CW-(toX(75)-PAD.l),toY(0)-toY(50));
+  ctx.fillStyle='#dc2626'; ctx.fillRect(toX(75),PAD.t,CW-(toX(75)-PAD.l),toY(50)-PAD.t);
+  ctx.fillStyle='#6b7280'; ctx.fillRect(PAD.l,PAD.t,toX(75)-PAD.l,toY(50)-PAD.t);
+  ctx.fillStyle='#2563eb'; ctx.fillRect(PAD.l,toY(50),toX(75)-PAD.l,toY(0)-toY(50));
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha=alpha;
+  ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(toX(75),PAD.t); ctx.lineTo(toX(75),PAD.t+CH); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l,toY(50)); ctx.lineTo(PAD.l+CW,toY(50)); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+}
+
+function drawQuadrantLabels(alpha){
+  if(alpha<=0) return;
+  ctx.save(); ctx.globalAlpha=alpha;
+  ctx.font='bold 11px -apple-system,sans-serif'; ctx.textAlign='center';
+  // "Capable but careless" → bottom of top-right quadrant, just above divider
+  [{text:'Capable but careless', x:toX(87), y:toY(53), c:'#dc2626'},
+   {text:'Capable & careful ✓',  x:toX(87), y:toY(28), c:'#16a34a'},
+   {text:'Failing on both',      x:toX(55), y:toY(92), c:'#6b7280'},
+   {text:'Refusing',             x:toX(55), y:toY(18), c:'#2563eb'},
+  ].forEach(lb=>{ ctx.fillStyle=lb.c; ctx.fillText(lb.text,lb.x,lb.y); });
+  ctx.restore();
+}
+
+function drawDots(dotP,riseT){
+  agents.forEach((ag,i)=>{
+    const appear=ease(Math.max(0,Math.min((dotP*15-i)/1,1)));
+    if(appear<=0) return;
+    const cx=toX(ag.u);
+    const cy=toY(0)+(toY(ag.l)-toY(0))*riseT;
+    const radius=5+(ag.r/100)*14;
+    const col=FC[ag.f];
+    ctx.save(); ctx.globalAlpha=appear;
+    if(ag.name==="Opus 4.7"&&riseT>0.4){ctx.shadowColor=col+'55'; ctx.shadowBlur=10;}
+    ctx.beginPath(); ctx.arc(cx,cy,radius,0,Math.PI*2);
+    ctx.fillStyle=col+'1a'; ctx.strokeStyle=col; ctx.lineWidth=2;
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+    if(appear>0.7&&riseT>0.5){
+      ctx.save(); ctx.globalAlpha=appear*Math.min((riseT-0.5)/0.3,1);
+      ctx.fillStyle=col;
+      ctx.font=`${ag.name==="Opus 4.7"?'bold ':''} ${ag.name==="Opus 4.7"?"12":"10"}px -apple-system,sans-serif`;
+      ctx.textAlign=cx>W*0.75?'right':'left';
+      ctx.fillText(ag.short,cx+(cx>W*0.75?-radius-4:radius+4),cy+4);
+      ctx.restore();
+    }
+  });
+}
+
+function drawLegend(alpha){
+  if(alpha<=0) return;
+  ctx.save(); ctx.globalAlpha=alpha;
+  const fams=[{f:'anthropic',l:'Anthropic'},{f:'openai',l:'OpenAI'},{f:'google',l:'Google'},{f:'xai',l:'xAI'}];
+  let lx=PAD.l+4,ly=PAD.t+12;
+  ctx.font='10px -apple-system,sans-serif'; ctx.textAlign='left';
+  fams.forEach(({f,l})=>{
+    ctx.beginPath(); ctx.arc(lx+6,ly-3,5,0,Math.PI*2);
+    ctx.fillStyle=FC[f]+'22'; ctx.strokeStyle=FC[f]; ctx.lineWidth=1.5;
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#64748b'; ctx.fillText(l,lx+14,ly+1); lx+=70;
+  });
+  // Marker size legend — moved to bottom-left quadrant, away from dots
+  ctx.fillStyle='#94a3b8'; ctx.font='10px -apple-system,sans-serif'; ctx.textAlign='left';
+  ctx.fillText('● size = refusal rate', PAD.l+8, PAD.t+CH-10);
+  ctx.restore();
+}
+
+function drawOpusHighlight(alpha){
+  if(alpha<=0) return;
+  const op=agents[0]; const cx=toX(op.u),cy=toY(op.l);
+  ctx.save(); ctx.globalAlpha=alpha*0.7;
+  const r=22+Math.sin(performance.now()/400)*3;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle=FC.anthropic; ctx.lineWidth=2; ctx.stroke();
+  ctx.restore();
+}
+
+function draw(){
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  drawQuadrants(state.quads);
+  drawAxes(state.axis);
+  drawYAxis(state.yAxis);
+  drawDots(state.dots,state.rise);
+  drawQuadrantLabels(state.labels);
+  drawLegend(state.dots);
+  drawOpusHighlight(state.opus);
+}
+
+let raf;
+function loop(now){
+  updateAnims(now);
+  draw();
+  raf=requestAnimationFrame(loop);
+}
+
+// Controls
+document.getElementById('nextBtn').onclick=()=>setPhase(phase+1);
+document.getElementById('backBtn').onclick=()=>setPhase(phase-1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();setPhase(phase+1);}
+  if(e.key==='ArrowLeft'){e.preventDefault();setPhase(phase-1);}
+});
+
+setPhase(0);
+requestAnimationFrame(now=>{loop(now);});
+</script>
+</body>
+</html>

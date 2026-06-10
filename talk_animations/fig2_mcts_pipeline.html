@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Figure 2 — MCTS Scenario-Surfacing Pipeline</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#fff; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+         height:100vh; display:flex; flex-direction:column; align-items:center;
+         justify-content:center; gap:10px; overflow:hidden; }
+  h1 { font-size:13px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#64748b; }
+  canvas { display:block; border:1px solid #e2e8f0; border-radius:8px; }
+  .ctrl { display:flex; align-items:center; gap:12px; }
+  .ctrl-btn { background:#f8fafc; border:1px solid #e2e8f0; color:#374151; padding:7px 18px;
+              border-radius:6px; font-size:12px; cursor:pointer; }
+  .ctrl-btn:hover { background:#f1f5f9; }
+  .ctrl-btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .ctrl-btn.primary:hover { background:#1d4ed8; }
+  .step-info { display:flex; flex-direction:column; align-items:center; min-width:360px; gap:2px; }
+  .step-lbl { font-size:11px; color:#2563eb; height:15px; text-align:center; }
+  .step-num  { font-size:10px; color:#cbd5e1; }
+  .key-hint  { font-size:10px; color:#cbd5e1; }
+</style>
+</head>
+<body>
+<h1>MCTS Scenario-Surfacing Engine · CI-Targeted Data Generation</h1>
+<canvas id="c" width="960" height="478"></canvas>
+<div class="ctrl">
+  <button class="ctrl-btn" id="backBtn">← Back</button>
+  <div class="step-info">
+    <div class="step-lbl" id="stepLbl">Press Next or → to begin</div>
+    <div class="step-num"  id="stepNum">0 / 10</div>
+  </div>
+  <button class="ctrl-btn primary" id="nextBtn">Next →</button>
+</div>
+<div class="key-hint">Space / → to advance &nbsp;·&nbsp; ← to go back</div>
+
+<script>
+const CV = document.getElementById('c');
+const ctx = CV.getContext('2d');
+const W = CV.width, H = CV.height;
+
+// ── Palette ───────────────────────────────────────────────
+const TAO='#2563eb', VCL='#7c3aed', RMA='#dc2626';
+const MUTED='#64748b', FAINT='#94a3b8', BDR='#e2e8f0', INK='#0f172a';
+
+// ── Section x-ranges ──────────────────────────────────────
+const SS=[8,158], ST=[176,534], SC=[552,774], SP=[792,952];
+
+// ── Geometry helpers ──────────────────────────────────────
+function rr(x,y,w,h,r=5){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+}
+function box(x,y,w,h,fill,stroke,r=5,lw=1,dash=false){
+  rr(x,y,w,h,r); ctx.fillStyle=fill; ctx.fill();
+  if(stroke){ ctx.strokeStyle=stroke; ctx.lineWidth=lw;
+    if(dash) ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]); }
+}
+function circ(x,y,r,fill,stroke,lw=1.5,dash=false){
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=fill; ctx.fill();
+  ctx.strokeStyle=stroke; ctx.lineWidth=lw;
+  if(dash) ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+}
+function t(s,x,y,sz=10,col=INK,align='center',bold=false){
+  ctx.fillStyle=col;
+  ctx.font=(bold?'bold ':'')+sz+'px -apple-system,sans-serif';
+  ctx.textAlign=align; ctx.fillText(s,x,y);
+}
+function bez(x1,y1,x2,y2,col,lw=1.5,dash=false,a=1){
+  ctx.save(); ctx.globalAlpha=a; ctx.strokeStyle=col; ctx.lineWidth=lw;
+  if(dash) ctx.setLineDash([5,4]);
+  const mx=(x1+x2)/2;
+  ctx.beginPath(); ctx.moveTo(x1,y1);
+  ctx.bezierCurveTo(mx,y1,mx,y2,x2,y2); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+}
+function arr(x1,y1,x2,y2,col,lw=1.5){
+  ctx.save(); ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=lw;
+  const a=Math.atan2(y2-y1,x2-x1);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-9*Math.cos(a-.42),y2-9*Math.sin(a-.42));
+  ctx.lineTo(x2-9*Math.cos(a+.42),y2-9*Math.sin(a+.42));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+// ── Node positions ─────────────────────────────────────────
+const ROOT = {x:214, y:240};
+const D1 = [
+  {x:318, y:114, col:TAO, lbl:['Ambiguity','Trap (TAO)']},
+  {x:318, y:240, col:VCL, lbl:['Semantic','Entang. (VCL)']},
+  {x:318, y:374, col:RMA, lbl:['Identity','Bleed (RMA)']},
+];
+const D2 = [
+  {x:416,y: 82,col:TAO,sel:true},
+  {x:416,y:128,col:TAO},
+  {x:416,y:172,col:TAO},
+  {x:416,y:212,col:VCL},
+  {x:416,y:248,col:VCL},
+  {x:416,y:284,col:VCL},
+  {x:416,y:336,col:RMA},
+  {x:416,y:376,col:RMA},
+  {x:416,y:416,col:RMA},
+];
+const D2P = [0,0,0, 1,1,1, 2,2,2];
+const EXP  = {x:508, y:64, col:TAO};
+
+// ── Phase system ───────────────────────────────────────────
+const state  = {seeds:0,root:0,d1:0,d2:0,sel:0,exp:0,score:0,reward:0,bp:0,pool:0};
+const PHASES = [
+  {lbl:'', t:{}},
+  {lbl:'Seeds from deployment demos, user studies, and CI literature', t:{seeds:1}},
+  {lbl:'Each seed initialises one MCTS root node', t:{root:1}},
+  {lbl:'Tree branches by failure mode: TAO (Ambiguity Trap) · VCL (Semantic Entanglement) · RMA (Identity Bleed)', t:{d1:1}},
+  {lbl:'MCTS explores candidate JSON scenarios at each node', t:{d2:1}},
+  {lbl:'UCB1-guided selection: the most promising node is chosen', t:{sel:1}},
+  {lbl:'Expansion: a new JSON scenario is generated and added to the tree', t:{exp:1}},
+  {lbl:'Open-weight proxies estimate Utility U · open-weight judge estimates CI-violation CI_v', t:{score:1}},
+  {lbl:'Reward R = U × CI_v drives expansion and backpropagation — closed-weight models never in this loop', t:{reward:1}},
+  {lbl:'Backpropagating R + novelty updates all parent nodes in the selected path', t:{bp:1}},
+  {lbl:'After many iterations: exact-content + near-duplicate filter → evaluation pool, 3 failure modes', t:{pool:1}},
+];
+const MAX_P = PHASES.length - 1;
+let phase = 0;
+const anims = {};
+const DUR   = 660;
+const ease  = p => p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+
+function setPhase(p){
+  phase = Math.max(0, Math.min(p, MAX_P));
+  const now = performance.now();
+  const acc = {};
+  for(let i=0;i<=phase;i++) Object.assign(acc, PHASES[i].t);
+  Object.keys(acc).forEach(k=>{
+    if(Math.abs(acc[k]-(state[k]||0))>.001)
+      anims[k]={from:state[k]||0, to:acc[k], start:now, dur:k==='bp'?900:DUR};
+  });
+  document.getElementById('stepLbl').textContent = PHASES[phase].lbl;
+  document.getElementById('stepNum').textContent  = phase+' / '+MAX_P;
+  document.getElementById('backBtn').disabled = phase===0;
+  document.getElementById('nextBtn').disabled = phase===MAX_P;
+}
+function upd(now){
+  Object.keys(anims).forEach(k=>{
+    const a=anims[k], p=Math.min((now-a.start)/a.dur,1);
+    state[k]=a.from+(a.to-a.from)*ease(p);
+    if(p>=1){state[k]=a.to; delete anims[k];}
+  });
+}
+
+// ── Draw sections ──────────────────────────────────────────
+function drawPanels(){
+  [[SS,'Seeds become roots'],[ST,'CI-targeted MCTS tree'],
+   [SC,'Open-weight scoring'],[SP,'Dedup → pool']].forEach(([s,l])=>{
+    box(s[0],6,s[1]-s[0],H-12,'#f8fafc',BDR,6,1);
+    t(l,(s[0]+s[1])/2,24,9,MUTED,'center',true);
+  });
+}
+
+function drawSeeds(a){
+  if(a<=0) return;
+  ctx.save(); ctx.globalAlpha=a;
+  const seeds=[['auth debug tabs','deployment demo'],['calendar titles','user study'],['cart + saved','CI literature']];
+  seeds.forEach(([title,sub],i)=>{
+    const x=SS[0]+8, y=40+i*106, w=SS[1]-SS[0]-16, h=84;
+    box(x,y,w,h,'#fff',BDR,4,1);
+    box(x+6,y+8,22,18,'#f1f5f9',BDR,3,1);
+    t('{}',x+17,y+21,8,FAINT);
+    t(title,x+8,y+38,9,'#374151','left',true);
+    t(sub,x+8,y+52,8,FAINT,'left');
+    box(x+6,y+60,w-12,16,'#f1f5f9',null,3);
+    t('{ "scenario": … }',x+w/2,y+71,8,FAINT);
+  });
+  t('···',(SS[0]+SS[1])/2,382,14,FAINT);
+  t('each seed initialises',(SS[0]+SS[1])/2,402,8,MUTED);
+  t('one MCTS root',(SS[0]+SS[1])/2,413,8,MUTED);
+  ctx.restore();
+}
+
+function drawRoot(a){
+  if(a<=0) return;
+  ctx.save(); ctx.globalAlpha=a;
+  arr(SS[1]+4,H/2,ST[0]-2,H/2,FAINT,1.5);
+  circ(ROOT.x,ROOT.y,18,'#f1f5f9','#475569',2);
+  t('MCTS',ROOT.x,ROOT.y-3,8,'#475569','center',true);
+  t('root', ROOT.x,ROOT.y+9,8,'#475569');
+  t('(per seed)',ROOT.x,ROOT.y+30,8,FAINT);
+  ctx.restore();
+}
+
+function drawD1(a){
+  if(a<=0) return;
+  D1.forEach((n,i)=>{
+    const fa=ease(Math.max(0,Math.min(a*3-i,1)));
+    if(fa<=0) return;
+    ctx.save(); ctx.globalAlpha=fa;
+    bez(ROOT.x+18,ROOT.y,n.x-13,n.y,n.col,1.5);
+    circ(n.x,n.y,13,n.col+'22',n.col,2);
+    n.lbl.forEach((l,li)=> t(l,n.x+18,n.y+(li-.5)*13+4,9,n.col,'left',true));
+    ctx.restore();
+  });
+}
+
+function drawD2(a){
+  if(a<=0) return;
+  D2.forEach((n,i)=>{
+    const fa=ease(Math.max(0,Math.min(a*9-i,1)));
+    if(fa<=0) return;
+    const par=D1[D2P[i]];
+    ctx.save(); ctx.globalAlpha=fa*0.45;
+    bez(par.x+12,par.y,n.x-9,n.y,BDR,1,true);
+    circ(n.x,n.y,8,'#f8fafc',BDR,1.2);
+    ctx.restore();
+  });
+}
+
+function drawSel(a){
+  if(a<=0) return;
+  ctx.save(); ctx.globalAlpha=a;
+  bez(ROOT.x+18,ROOT.y,D1[0].x-13,D1[0].y,TAO,2.5);
+  circ(D1[0].x,D1[0].y,13,TAO+'33',TAO,2.5);
+  bez(D1[0].x+12,D1[0].y,D2[0].x-9,D2[0].y,TAO,2.5);
+  circ(D2[0].x,D2[0].y,8,TAO+'44',TAO,2.5);
+  // UCB1 badge
+  box(332,28,130,22,'#eff6ff','#bfdbfe',4,1);
+  t('UCB1-guided selection',397,43,9,'#1d4ed8','center',true);
+  t('selection',D1[0].x-2,D1[0].y-21,8,TAO);
+  ctx.restore();
+}
+
+function drawExp(a){
+  if(a<=0) return;
+  ctx.save(); ctx.globalAlpha=a;
+  bez(D2[0].x+8,D2[0].y,EXP.x-10,EXP.y,TAO,2,true);
+  circ(EXP.x,EXP.y,11,'#fff',TAO,2,true);
+  t('expansion',EXP.x+15,EXP.y+1,8,TAO,'left',true);
+  t('new JSON scenario',EXP.x+15,EXP.y+13,8,FAINT,'left');
+  ctx.restore();
+}
+
+function drawScore(a){
+  if(a<=0) return;
+  ctx.save(); ctx.globalAlpha=a;
+  const sx=SC[0]+8, sw=SC[1]-SC[0]-16, cx=sx+sw/2;
+  arr(ST[1]+4,H/2-50,SC[0]-2,H/2-50,FAINT,1.5);
+  t('Score each candidate',cx,45,10,'#374151','center',true);
+  t('Open-weight proxies estimate task utility',cx,57,8,MUTED);
+  t('Open-weight judge estimates CI violation',cx,68,8,MUTED);
+  // 3 proxy boxes
+  const pw=(sw-16)/3;
+  [0,1,2].forEach(i=>{
+    const bx=sx+4+i*(pw+4);
+    box(bx,76,pw,28,'#fff',BDR,4,1);
+    t('proxy '+(i+1),bx+pw/2,94,9,'#374151');
+  });
+  arr(cx,106,cx,122,FAINT,1.2);
+  // Utility score
+  box(sx+sw/4,126,sw/2,28,'#eff6ff','#bfdbfe',5,1.5);
+  t('Utility score U',cx,144,10,'#1e40af','center',true);
+  // Judge row
+  const jw=sw*.44;
+  box(sx+4,162,jw,28,'#fff',BDR,4,1);
+  t('judge',sx+4+jw/2,179,9,'#374151');
+  arr(sx+4+jw+1,176,sx+4+jw+16,176,FAINT,1.2);
+  const cvx=sx+4+jw+18, cvw=sw-jw-26;
+  box(cvx,162,cvw,28,'#fff7ed','#fed7aa',4,1.5);
+  t('CI_v score',cvx+cvw/2,179,9,'#c2410c','center',true);
+  ctx.restore();
+}
+
+function drawReward(a){
+  if(a<=0) return;
+  ctx.save(); ctx.globalAlpha=a;
+  const sx=SC[0]+8, sw=SC[1]-SC[0]-16, cx=sx+sw/2;
+  box(sx+2,202,sw-4,52,'#0f172a',null,6);
+  t('R  =  U  ×  CI',cx-10,232,17,'#fff','center',true);
+  t('v',cx+52,238,11,'#94a3b8');
+  t('reward for expansion / backpropagation',cx,248,8,'#64748b');
+  box(sx+2,262,sw-4,34,'#f0fdf4','#bbf7d0',4,1);
+  t('✓  Closed-weight frontier models',cx,277,8,'#15803d','center',true);
+  t('never used in this scoring loop',cx,289,8,'#15803d');
+  ctx.restore();
+}
+
+function drawBP(a){
+  if(a<=0) return;
+  ctx.save(); ctx.globalAlpha=a;
+  // Curved dashed arrow along bottom: scoring → below canvas → back to root
+  const sx=SC[0]+50, sy=H-34, ex=ROOT.x, ey=ROOT.y+19;
+  ctx.strokeStyle=TAO; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+  ctx.beginPath();
+  ctx.moveTo(sx,sy);
+  ctx.bezierCurveTo(sx-50,sy+16, ex,sy+16, ex,ey);
+  ctx.stroke(); ctx.setLineDash([]);
+  // Arrowhead pointing up into root
+  ctx.fillStyle=TAO;
+  ctx.beginPath(); ctx.moveTo(ex,ey);
+  ctx.lineTo(ex-6,ey+9); ctx.lineTo(ex+6,ey+9); ctx.closePath(); ctx.fill();
+  t('backpropagate R + novelty',(sx+ex)/2+24,sy+24,9,TAO);
+  ctx.restore();
+}
+
+function drawPool(a){
+  if(a<=0) return;
+  ctx.save(); ctx.globalAlpha=a;
+  const px=SP[0]+8, pw=SP[1]-SP[0]-16, cx=px+pw/2;
+  arr(SC[1]+4,H/2,SP[0]-2,H/2,FAINT,1.5);
+  // Funnel
+  ctx.fillStyle='#e2e8f0'; ctx.strokeStyle=FAINT; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(px+4,38); ctx.lineTo(px+pw-4,38);
+  ctx.lineTo(cx+14,74); ctx.lineTo(cx+14,100);
+  ctx.lineTo(cx-14,100); ctx.lineTo(cx-14,74); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  t('filter',cx,120,9,MUTED,'center',true);
+  t('exact-content filter',cx,134,8,MUTED);
+  t('near-duplicate filter',cx,146,8,MUTED);
+  arr(cx,154,cx,172,FAINT,1.2);
+  // Result box
+  box(px+4,176,pw-8,66,'#fff','#0f172a',6,2);
+  t('eval',cx,210,16,INK,'center',true);
+  t('pool',cx,228,16,INK,'center',true);
+  t('3 failure modes',cx,247,9,MUTED);
+  // Colour key
+  [[TAO,'TAO'],[VCL,'VCL'],[RMA,'RMA']].forEach(([c,l],i)=>{
+    circ(px+14,274+i*18,5,c+'33',c,1.5);
+    t(l,px+24,278+i*18,9,c,'left',true);
+  });
+  t('evaluation pool',cx,342,8,FAINT);
+  ctx.restore();
+}
+
+// ── Main loop ──────────────────────────────────────────────
+function draw(){
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  drawPanels();
+  drawSeeds(state.seeds);
+  drawRoot(state.root);
+  drawD1(state.d1);
+  drawD2(state.d2);
+  drawSel(state.sel);
+  drawExp(state.exp);
+  drawScore(state.score);
+  drawReward(state.reward);
+  drawBP(state.bp);
+  drawPool(state.pool);
+}
+
+function loop(now){ upd(now); draw(); requestAnimationFrame(loop); }
+
+document.getElementById('nextBtn').onclick = ()=>setPhase(phase+1);
+document.getElementById('backBtn').onclick  = ()=>setPhase(phase-1);
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault(); setPhase(phase+1);}
+  if(e.key==='ArrowLeft')               {e.preventDefault(); setPhase(phase-1);}
+});
+setPhase(0);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Figure 15 — Behaviour Decomposition</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#fff; color:#0f172a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:10px; }
+  h1 { font-size:13px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#64748b; }
+  .subtitle { font-size:12px; color:#94a3b8; text-align:center; }
+  .chart { width:min(820px,100%); }
+  .row { display:flex; align-items:center; margin-bottom:5px; }
+  .label { width:110px; font-size:11px; color:#374151; text-align:right; padding-right:10px; flex-shrink:0; white-space:nowrap; }
+  .label.hi { color:#2563eb; font-weight:600; }
+  .bar-wrap { flex:1; height:22px; background:#f1f5f9; border-radius:3px; overflow:hidden; display:flex; }
+  .seg { height:100%; transition:width 0.7s cubic-bezier(.4,0,.2,1); }
+  .legend { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:#64748b; }
+  .legend-dot { width:12px; height:12px; border-radius:2px; }
+  .ctrl { display:flex; align-items:center; gap:12px; }
+  .ctrl-btn { background:#f8fafc; border:1px solid #e2e8f0; color:#374151; padding:7px 18px; border-radius:6px; font-size:12px; cursor:pointer; }
+  .ctrl-btn:hover { background:#f1f5f9; }
+  .ctrl-btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .ctrl-btn.primary:hover { background:#1d4ed8; }
+  .step-info { display:flex; flex-direction:column; align-items:center; min-width:280px; gap:2px; }
+  .step-lbl { font-size:11px; color:#2563eb; letter-spacing:.04em; height:15px; text-align:center; }
+  .step-num { font-size:10px; color:#cbd5e1; }
+  .axis-row { display:flex; align-items:center; margin-bottom:8px; }
+  .axis-label { width:110px; }
+  .axis-ticks { flex:1; display:flex; justify-content:space-between; }
+  .tick { font-size:10px; color:#94a3b8; }
+  .key-hint { font-size:10px; color:#cbd5e1; }
+</style>
+</head>
+<body>
+<h1>Behaviour Decomposition</h1>
+<div class="subtitle">Each scenario classified: completed? leaked? &nbsp;·&nbsp; Ordered by raw leakage (lowest → highest)</div>
+<div class="chart" id="chart">
+  <div class="axis-row">
+    <div class="axis-label"></div>
+    <div class="axis-ticks"><span class="tick">0%</span><span class="tick">25%</span><span class="tick">50%</span><span class="tick">75%</span><span class="tick">100%</span></div>
+  </div>
+</div>
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div>Completed, clean</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Completed, leak</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div>Incomplete, clean</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div>Incomplete, leak ← hidden failure</div>
+</div>
+<div class="ctrl">
+  <button class="ctrl-btn" id="backBtn">← Back</button>
+  <div class="step-info">
+    <div class="step-lbl" id="stepLbl">Press Next or → to begin</div>
+    <div class="step-num" id="stepNum">0 / 4</div>
+  </div>
+  <button class="ctrl-btn primary" id="nextBtn">Next →</button>
+</div>
+<div class="key-hint">Space / → to advance &nbsp;·&nbsp; ← to go back</div>
+
+<script>
+const models=[
+  {name:"Opus 4.7",     cc:70.1,cl:11.1,ic:16.2,il:2.6, hi:true},
+  {name:"GPT-5.4",      cc:30.7,cl:13.7,ic:50.4,il:5.1, hi:true},
+  {name:"Sonnet 4.6",   cc:28.0,cl:24.1,ic:25.8,il:22.1},
+  {name:"MiniMax",      cc:28.7,cl:39.7,ic:13.2,il:18.4},
+  {name:"GPT-5.4-mini", cc:20.5,cl:31.6,ic:18.8,il:29.1},
+  {name:"Kimi-K2.6",    cc:3.4, cl:40.2,ic:34.2,il:22.2,hi:true},
+  {name:"GPT-OSS-120B", cc:22.5,cl:43.3,ic:11.7,il:22.5},
+  {name:"Gemma-26B",    cc:24.2,cl:50.2,ic:8.3, il:17.3},
+  {name:"Qwen-35B",     cc:19.2,cl:63.7,ic:3.9, il:13.2},
+  {name:"DeepSeek",     cc:11.0,cl:53.1,ic:6.1, il:29.8},
+  {name:"GLM-5.1",      cc:8.3, cl:49.0,ic:6.2, il:36.5},
+  {name:"Grok-4.3",     cc:6.7, cl:71.9,ic:1.4, il:19.6},
+  {name:"Gemini-Flash", cc:6.0, cl:82.0,ic:0.8, il:11.2},
+  {name:"Qwen-Max",     cc:2.2, cl:79.9,ic:0.4, il:17.5},
+  {name:"Gemini-Pro",   cc:1.7, cl:94.9,ic:0.0, il:3.4},
+];
+const SEGS=[{k:'cc',c:'#16a34a'},{k:'cl',c:'#dc2626'},{k:'ic',c:'#94a3b8'},{k:'il',c:'#d97706'}];
+const PHASE_LABELS=[
+  'Press Next or → to begin',
+  'Completed, clean — task done with no leak.',
+  'Completed, leak — task done but private info disclosed.',
+  'Incomplete, clean — agent refused or failed, no leak.',
+  'Incomplete, leak — partial output still contains data. "Refuse-and-be-safe" is a myth.',
+];
+const MAX_PHASE=4;
+let phase=0;
+
+// Build rows
+const rowData=[];
+const chart=document.getElementById('chart');
+models.forEach(m=>{
+  const row=document.createElement('div'); row.className='row';
+  const lbl=document.createElement('div'); lbl.className='label'+(m.hi?' hi':''); lbl.textContent=m.name;
+  const wrap=document.createElement('div'); wrap.className='bar-wrap';
+  const segs=SEGS.map(({k,c})=>{
+    const seg=document.createElement('div'); seg.className='seg';
+    seg.style.background=c; seg.style.width='0%'; wrap.appendChild(seg);
+    return {seg,v:m[k]};
+  });
+  row.appendChild(lbl); row.appendChild(wrap); chart.appendChild(row);
+  rowData.push(segs);
+});
+
+function applyPhase(p){
+  phase=Math.max(0,Math.min(p,MAX_PHASE));
+  rowData.forEach(segs=>segs.forEach((s,i)=>{s.seg.style.width=i<phase?s.v+'%':'0%';}));
+  document.getElementById('stepLbl').textContent=PHASE_LABELS[phase];
+  document.getElementById('stepNum').textContent=phase+' / '+MAX_PHASE;
+  document.getElementById('backBtn').disabled=phase===0;
+  document.getElementById('nextBtn').disabled=phase===MAX_PHASE;
+}
+
+document.getElementById('nextBtn').onclick=()=>applyPhase(phase+1);
+document.getElementById('backBtn').onclick=()=>applyPhase(phase-1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();applyPhase(phase+1);}
+  if(e.key==='ArrowLeft'){e.preventDefault();applyPhase(phase-1);}
+});
+applyPhase(0);
+</script>
+</body>
+</html>

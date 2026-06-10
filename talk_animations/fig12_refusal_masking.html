@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Figure 12 — Refusal Masking</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#fff; color:#0f172a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+  h1 { font-size:13px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#64748b; }
+  canvas { display:block; border:1px solid #e2e8f0; border-radius:8px; background:#fff; }
+  .ctrl { display:flex; align-items:center; gap:12px; margin-top:10px; }
+  .ctrl-btn { background:#f8fafc; border:1px solid #e2e8f0; color:#374151; padding:7px 18px; border-radius:6px; font-size:12px; cursor:pointer; }
+  .ctrl-btn:hover { background:#f1f5f9; }
+  .ctrl-btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .ctrl-btn.primary:hover { background:#1d4ed8; }
+  .step-info { display:flex; flex-direction:column; align-items:center; min-width:280px; gap:2px; }
+  .step-lbl { font-size:11px; color:#2563eb; letter-spacing:.04em; height:15px; text-align:center; }
+  .step-num { font-size:10px; color:#cbd5e1; }
+  .legend { display:flex; gap:20px; }
+  .li { display:flex; align-items:center; gap:6px; font-size:11px; color:#64748b; }
+  .lsq { width:20px; height:4px; border-radius:2px; }
+  .key-hint { font-size:10px; color:#cbd5e1; }
+</style>
+</head>
+<body>
+<h1>Refusal Masking · Raw vs. Engagement-Conditioned Leakage</h1>
+<canvas id="c" width="780" height="420"></canvas>
+<div class="legend">
+  <div class="li"><div class="lsq" style="background:#2563eb"></div>Raw leakage L</div>
+  <div class="li"><div class="lsq" style="background:#fef3c7;border:1px solid #d97706;height:10px;border-radius:2px;"></div>Refusal gap</div>
+  <div class="li"><div class="lsq" style="background:#dc2626"></div>Engaged leakage L_eng</div>
+</div>
+<div class="ctrl">
+  <button class="ctrl-btn" id="backBtn">← Back</button>
+  <div class="step-info">
+    <div class="step-lbl" id="stepLbl">Press Next or → to begin</div>
+    <div class="step-num" id="stepNum">0 / 4</div>
+  </div>
+  <button class="ctrl-btn primary" id="nextBtn">Next →</button>
+</div>
+<div class="key-hint">Space / → to advance &nbsp;·&nbsp; ← to go back</div>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const W=canvas.width,H=canvas.height;
+const PAD={l:60,r:30,t:24,b:52};
+const CW=W-PAD.l-PAD.r,CH=H-PAD.t-PAD.b;
+
+const FC={anthropic:'#7c3aed',openai:'#2563eb',google:'#059669',xai:'#b45309',alibaba:'#dc2626',deepseek:'#4338ca',moonshot:'#ea580c',minimax:'#be185d',zhipu:'#0284c7'};
+const agents=[
+  {name:"Opus 4.7",  l:13.7,leng:14.0,r:1.7, f:'anthropic'},
+  {name:"GPT-5.4",   l:18.8,leng:32.4,r:41.9,f:'openai',hi:true},
+  {name:"Sonnet 4.6",l:46.2,leng:54.5,r:15.4,f:'anthropic'},
+  {name:"MiniMax",   l:58.1,leng:63.6,r:8.5, f:'minimax'},
+  {name:"5.4-mini",  l:60.7,leng:65.1,r:6.8, f:'openai'},
+  {name:"Kimi-K2.6", l:62.4,leng:80.2,r:22.2,f:'moonshot',hi:true},
+  {name:"OSS-120B",  l:65.8,leng:78.5,r:16.2,f:'openai'},
+  {name:"Gemma-26B", l:67.5,leng:69.3,r:2.6, f:'google'},
+  {name:"Qwen-35B",  l:76.9,leng:77.6,r:0.9, f:'alibaba'},
+  {name:"DeepSeek",  l:82.9,leng:85.1,r:2.6, f:'deepseek'},
+  {name:"GLM-5.1",   l:85.5,leng:89.3,r:4.3, f:'zhipu'},
+  {name:"Grok-4.3",  l:91.5,leng:91.5,r:0,   f:'xai'},
+  {name:"G-Flash",   l:93.2,leng:94.0,r:0.9, f:'google'},
+  {name:"Qwen-Max",  l:97.4,leng:97.4,r:0,   f:'alibaba'},
+  {name:"G-Pro",     l:98.3,leng:98.3,r:0,   f:'google'},
+].sort((a,b)=>a.l-b.l);
+
+const barW=CW/agents.length*0.55,gap=CW/agents.length;
+function toX(i){return PAD.l+gap*(i+0.5);}
+function toY(v){return PAD.t+CH-(v/100)*CH;}
+
+// Phase system
+const state={axes:0,rawBars:0,gapFill:0,engBars:0,labels:0,callouts:0};
+const PHASES=[
+  {label:'', targets:{}},
+  {label:'Axes drawn', targets:{axes:1}},
+  {label:'Raw leakage L — includes refused scenarios', targets:{rawBars:1,labels:1}},
+  {label:'Amber gap = share hidden by refusal', targets:{gapFill:1}},
+  {label:'Engaged L_eng (red) — true rate on attempted tasks', targets:{engBars:1}},
+  {label:'Low raw L can be a mirage. GPT-5.4: 41.9% refusal hides 14 pts.', targets:{callouts:1}},
+];
+const MAX_PHASE=PHASES.length-1;
+let phase=0;
+const target={...state};
+const anims={};
+const ANIM_DUR=700;
+function ease(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+function setPhase(p){
+  phase=Math.max(0,Math.min(p,MAX_PHASE));
+  const now=performance.now();
+  const acc={};
+  for(let i=0;i<=phase;i++) Object.assign(acc,PHASES[i].targets);
+  Object.keys(acc).forEach(k=>{
+    const cur=state[k]||0;
+    if(Math.abs(acc[k]-cur)>0.001) anims[k]={from:cur,to:acc[k],start:now,dur:ANIM_DUR};
+    target[k]=acc[k];
+  });
+  document.getElementById('stepLbl').textContent=PHASES[phase].label;
+  document.getElementById('stepNum').textContent=phase+' / '+MAX_PHASE;
+  document.getElementById('backBtn').disabled=phase===0;
+  document.getElementById('nextBtn').disabled=phase===MAX_PHASE;
+}
+function updateAnims(now){
+  Object.keys(anims).forEach(k=>{
+    const a=anims[k]; const p=Math.min((now-a.start)/a.dur,1);
+    state[k]=a.from+(a.to-a.from)*ease(p);
+    if(p>=1){state[k]=a.to; delete anims[k];}
+  });
+}
+
+function draw(){
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  // Axes
+  if(state.axes>0){
+    ctx.save(); ctx.globalAlpha=state.axes;
+    ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,PAD.t+CH); ctx.lineTo(PAD.l+CW,PAD.t+CH); ctx.stroke();
+    ctx.setLineDash([3,5]); ctx.strokeStyle='#f1f5f9';
+    [20,40,60,80,100].forEach(v=>{
+      ctx.beginPath(); ctx.moveTo(PAD.l,toY(v)); ctx.lineTo(PAD.l+CW,toY(v)); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    [0,20,40,60,80,100].forEach(v=>ctx.fillText(v+'%',PAD.l-6,toY(v)+3));
+    ctx.save(); ctx.translate(13,PAD.t+CH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='#64748b'; ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText('Leakage rate',0,0); ctx.restore();
+    ctx.restore();
+  }
+
+  // Raw bars
+  agents.forEach((ag,i)=>{
+    const appear=ease(Math.max(0,Math.min(state.rawBars*agents.length-i,1)));
+    if(appear<=0) return;
+    const x=toX(i)-barW/2, rawH=(ag.l/100)*CH*appear;
+    ctx.save(); ctx.globalAlpha=0.75*appear;
+    ctx.fillStyle='#dbeafe'; ctx.strokeStyle='#2563eb'; ctx.lineWidth=1.5;
+    ctx.fillRect(x,toY(ag.l*appear),barW,rawH); ctx.strokeRect(x,toY(ag.l*appear),barW,rawH);
+    ctx.restore();
+  });
+
+  // Refusal gap
+  agents.forEach((ag,i)=>{
+    if(ag.r<1||ag.leng<=ag.l) return;
+    const appear=ease(Math.max(0,Math.min(state.gapFill*agents.length-i,1)));
+    if(appear<=0) return;
+    const x=toX(i)-barW/2, gH=((ag.leng-ag.l)/100)*CH*appear;
+    ctx.save(); ctx.globalAlpha=0.55*appear;
+    ctx.fillStyle='#fef3c7'; ctx.strokeStyle='#d97706'; ctx.lineWidth=1;
+    ctx.fillRect(x,toY(ag.l)-gH,barW,gH); ctx.strokeRect(x,toY(ag.l)-gH,barW,gH);
+    ctx.restore();
+  });
+
+  // Engaged bar outlines
+  agents.forEach((ag,i)=>{
+    const appear=ease(Math.max(0,Math.min(state.engBars*agents.length-i,1)));
+    if(appear<=0) return;
+    const x=toX(i)-barW/2, eH=(ag.leng/100)*CH*appear;
+    ctx.save(); ctx.globalAlpha=0.9*appear;
+    ctx.strokeStyle='#dc2626'; ctx.lineWidth=2;
+    ctx.strokeRect(x,toY(ag.leng*appear),barW,eH);
+    ctx.restore();
+  });
+
+  // X-axis labels
+  if(state.labels>0){
+    agents.forEach((ag,i)=>{
+      ctx.save(); ctx.globalAlpha=state.labels;
+      ctx.save(); ctx.translate(toX(i),PAD.t+CH+8); ctx.rotate(-Math.PI/3);
+      ctx.fillStyle=ag.hi?'#dc2626':'#64748b';
+      ctx.font=`${ag.hi?'bold ':''} 9px sans-serif`; ctx.textAlign='right';
+      ctx.fillText(ag.name,0,0); ctx.restore(); ctx.restore();
+    });
+  }
+
+  // Callout annotations
+  if(state.callouts>0){
+    [{name:'GPT-5.4',   msg:'41.9% refusal\nhides 14 pts'},
+     {name:'Kimi-K2.6', msg:'22.2% refusal\nhides 18 pts'}
+    ].forEach(({name,msg})=>{
+      const ag=agents.find(a=>a.name===name); if(!ag) return;
+      const i=agents.indexOf(ag), x=toX(i);
+      ctx.save(); ctx.globalAlpha=state.callouts;
+      ctx.strokeStyle='#dc2626'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(x,toY(ag.leng)-2); ctx.lineTo(x,toY(ag.leng)-28); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#dc2626'; ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
+      msg.split('\n').forEach((line,li)=>ctx.fillText(line,x,toY(ag.leng)-32-li*11));
+      ctx.restore();
+    });
+  }
+}
+
+function loop(now){updateAnims(now); draw(); requestAnimationFrame(loop);}
+document.getElementById('nextBtn').onclick=()=>setPhase(phase+1);
+document.getElementById('backBtn').onclick=()=>setPhase(phase-1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();setPhase(phase+1);}
+  if(e.key==='ArrowLeft'){e.preventDefault();setPhase(phase-1);}
+});
+setPhase(0);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
