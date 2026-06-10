@@ -225,6 +225,16 @@
     font-style: italic;
     line-height: 1.4;
   }
+  .news-card .quote mark {
+    background: #fef3c7;
+    color: var(--ink);
+    padding: 0 3px;
+    border-radius: 2px;
+    font-style: italic;
+    font-weight: 600;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
 
   /* Mermaid container */
   .mermaid-wrap { background: #fff; padding: 8px; border: 1px solid var(--rule); border-radius: 6px; }
@@ -245,13 +255,12 @@
 
 <!-- ============ 1 TITLE ============ -->
 <section class="title-slide">
-  <div class="kicker">UKP Lab · TU Darmstadt · ATHENE</div>
+  <div class="kicker">UKP Lab · TU Darmstadt</div>
   <h1>Capable but Careless</h1>
   <div class="subtitle">Do Computer-Use Agents Follow Contextual Integrity?</div>
   <div class="byline">Anmol Goel &middot; Iryna Gurevych</div>
-  <div class="affil">Lab Meetup &middot; June 2026</div>
+  <div class="affil">June 2026</div>
   <div class="links">
-    <span><strong>arXiv</strong> 2026.XXXXX</span>
     <span><strong>code</strong> github.com/UKPLab/AgentCIBench</span>
     <span><strong>data</strong> huggingface.co/datasets/UKP/AgentCIBench</span>
   </div>
@@ -335,24 +344,24 @@
       <div class="news-card">
         <div class="src">State of Surveillance · Apr 2026</div>
         <div class="hd">Researchers gave AI agents real system access. They leaked secrets and lied about it.</div>
-        <div class="quote">"Agents disclosed sensitive information when asked. Sometimes without even being asked cleverly. Prompt injection wasn't necessary. In one case, an email went to the wrong recipient with sensitive data attached."</div>
+        <div class="quote">"Agents disclosed sensitive information when asked. Sometimes without even being asked cleverly. <mark>Prompt injection wasn't necessary.</mark> In one case, an email went to the wrong recipient with sensitive data attached."</div>
       </div>
       <div class="news-card">
         <div class="src">CrowdStrike · 2026</div>
         <div class="hd">Data leakage: AI's plumbing problem</div>
-        <div class="quote">"Shadow AI breaches affected customer PII and intellectual property the most. A third of incidents involved no exploit. Just a prompt."</div>
+        <div class="quote">"Shadow AI breaches affected customer PII and intellectual property the most. A third of incidents <mark>involved no exploit. Just a prompt.</mark>"</div>
       </div>
     </div>
     <div>
       <div class="news-card">
         <div class="src">Kiteworks · 2026</div>
         <div class="hd">AI-agent security incidents hit 65% of firms in 2026</div>
-        <div class="quote">"Agents are being deployed with access to exactly the kind of systems that matter: email, databases, file systems, communication tools."</div>
+        <div class="quote">"Agents are being deployed with access to <mark>exactly the kind of systems that matter: email, databases, file systems, communication tools.</mark>"</div>
       </div>
       <div class="news-card">
         <div class="src">Vercel post-mortem · Apr 2026</div>
         <div class="hd">An employee granted an AI productivity tool "Allow All" OAuth permissions</div>
-        <div class="quote">"Attackers used those tokens to take over the employee's account. The agent did exactly what it was given permission to do."</div>
+        <div class="quote">"Attackers used those tokens to take over the employee's account. <mark>The agent did exactly what it was given permission to do.</mark>"</div>
       </div>
       <p style="margin-top:0.4em;"><em>Cooperative agents. Broad permissions. Ordinary prompts.</em></p>
     </div>
@@ -462,6 +471,38 @@
   </div>
   <aside class="notes">
     Walk the diagram once: Alice (Actor) sends Bob (Recipient) information about Carol (Subject). What kind of information, and under what norm? Change any one of those five and the appropriateness changes. CI gives us a vocabulary to say why a flow is wrong even when the data is not "sensitive." The point that lands with this audience: ConfAIde tests whether a model can answer a CI-prompt; we test whether an agent acts as if it has internalised one.
+  </aside>
+</section>
+
+<!-- ============ Roadmap ============ -->
+<section>
+  <div class="kicker">Roadmap</div>
+  <h2>What we'll cover</h2>
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-top:0.4em;">
+    <div class="mode">
+      <div class="axis">Part 1</div>
+      <h4>Formalism</h4>
+      <p>A scenario tuple, a metric that survives refusal, three CI failure modes.</p>
+    </div>
+    <div class="mode">
+      <div class="axis">Part 2</div>
+      <h4>Harness</h4>
+      <p>MCTS scenario generator, six-app workspace, hybrid scorer.</p>
+    </div>
+    <div class="mode">
+      <div class="axis">Part 3</div>
+      <h4>Results</h4>
+      <p>15 frontier agents. Task completion does not predict disclosure.</p>
+    </div>
+    <div class="mode">
+      <div class="axis">Part 4</div>
+      <h4>Mitigations</h4>
+      <p>Three prompt defenses that drop leakage and raise utility together.</p>
+    </div>
+  </div>
+  <p style="margin-top:0.8em;">Close with what this means for pre-deployment evaluation.</p>
+  <aside class="notes">
+    Quick orientation for the audience: about 6 minutes on each part. Part 1 sets the vocabulary. Part 2 is the methods slide block; if you've seen the paper you can sleep through it. Part 3 is the load-bearing section. Part 4 is the actionable piece. Discussion is short. The intent is that someone leaving after Part 3 still gets the headline; someone leaving after Part 4 also gets the prescription.
   </aside>
 </section>
 
