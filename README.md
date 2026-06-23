@@ -2,7 +2,7 @@
 
 **Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?**
 
-[![Paper](https://img.shields.io/badge/arXiv-pending-b31b1b.svg)](https://arxiv.org/abs/PENDING)
+[![Paper](https://img.shields.io/badge/arXiv-2606.23189-b31b1b.svg)](http://arxiv.org/abs/2606.23189)
 [![Data on HF](https://img.shields.io/badge/%F0%9F%A4%97-Dataset-yellow)](https://huggingface.co/datasets/UKPLab/AgentCIBench)
 [![License: Apache 2.0](https://img.shields.io/badge/code-Apache_2.0-blue.svg)](LICENSE)
 [![Data License: CC BY 4.0](https://img.shields.io/badge/data-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
@@ -20,7 +20,7 @@ We evaluate 15 frontier agents and find that 11 leak on more than 50% of
 scenarios, with an average leakage of 67.9% — and the same failures
 persist when agents act end-to-end in the rendered OpenApps UI.
 
-- 📄 **Paper:** [arXiv:PENDING](https://arxiv.org/abs/PENDING)
+- 📄 **Paper:** [arXiv:2606.23189](https://arxiv.org/abs/2606.23189)
 - 🤗 **Dataset:** [huggingface.co/datasets/UKPLab/AgentCIBench](https://huggingface.co/datasets/UKPLab/AgentCIBench)
 - 🌐 **Leaderboard / project page:** [ukplab.github.io/arxiv2026-agentcibench](https://ukplab.github.io/arxiv2026-agentcibench)
 
@@ -149,7 +149,7 @@ link to the per-scenario JSONL output produced by `eval.run_benchmark`.
 @article{goel2026agentcibench,
   title   = {Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?},
   author  = {Goel, Anmol and Gurevych, Iryna},
-  journal = {arXiv preprint arXiv:PENDING},
+  journal = {arXiv preprint arXiv:2606.23189},
   year    = {2026}
 }
 ```
