@@ -81,6 +81,7 @@ main { max-width:960px; margin:0 auto; padding:0 24px; }
 .eyebrow { font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
 .hero h1 { max-width:780px; margin:0 auto 24px; }
 .hero p.lede { max-width:680px; margin:0 auto 32px; }
+.herolinks { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin:0 auto 24px; }
 .install-pill {
   display:inline-flex; align-items:center; gap:12px;
   background:var(--surface-soft); border-radius:9999px;

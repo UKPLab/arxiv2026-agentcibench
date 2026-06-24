@@ -2,8 +2,8 @@
 
 **Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?**
 
-[![Paper](https://img.shields.io/badge/arXiv-2606.23189-b31b1b.svg)](http://arxiv.org/abs/2606.23189)
-[![Data on HF](https://img.shields.io/badge/%F0%9F%A4%97-Dataset-yellow)](https://huggingface.co/datasets/UKPLab/AgentCIBench)
+[![Paper](https://img.shields.io/badge/arXiv-2606.23189-b31b1b.svg)](https://arxiv.org/abs/2606.23189)
+[![Data on HF](https://img.shields.io/badge/%F0%9F%A4%97-Dataset-yellow)](https://huggingface.co/datasets/UKPLab/agentcibench)
 [![License: Apache 2.0](https://img.shields.io/badge/code-Apache_2.0-blue.svg)](LICENSE)
 [![Data License: CC BY 4.0](https://img.shields.io/badge/data-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
@@ -21,7 +21,7 @@ scenarios, with an average leakage of 67.9% — and the same failures
 persist when agents act end-to-end in the rendered OpenApps UI.
 
 - 📄 **Paper:** [arXiv:2606.23189](https://arxiv.org/abs/2606.23189)
-- 🤗 **Dataset:** [huggingface.co/datasets/UKPLab/AgentCIBench](https://huggingface.co/datasets/UKPLab/AgentCIBench)
+- 🤗 **Dataset:** [huggingface.co/datasets/UKPLab/agentcibench](https://huggingface.co/datasets/UKPLab/agentcibench)
 - 🌐 **Leaderboard / project page:** [ukplab.github.io/arxiv2026-agentcibench](https://ukplab.github.io/arxiv2026-agentcibench)
 
 ## Contents
@@ -79,7 +79,7 @@ canonical version:
 ```bash
 uv run python -c "
 from datasets import load_dataset
-ds = load_dataset('UKPLab/AgentCIBench')
+ds = load_dataset('UKPLab/agentcibench')
 ds['test'].to_json('data/generated_merged.jsonl')
 ds['test_e2e'].to_json('data/eval_set_e2e_50.jsonl')
 "
