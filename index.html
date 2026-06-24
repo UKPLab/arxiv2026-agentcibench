@@ -35,6 +35,10 @@
     A re-runnable evaluation harness that turns disclosure risk in computer-use agents into
     deterministically scored scenarios for contextual-integrity failures in everyday app workflows.
   </p>
+  <div class="herolinks">
+    <a class="btn btn-primary" href="https://arxiv.org/abs/2606.23189">arXiv preprint</a>
+    <a class="btn btn-secondary" href="https://huggingface.co/datasets/UKPLab/agentcibench">Hugging Face dataset</a>
+  </div>
   <div class="install-pill" id="installPill">
     <span class="prompt">$</span>
     <code>git clone https://github.com/UKPLab/arxiv2026-agentcibench.git</code>
@@ -131,19 +135,13 @@ uv run python -m eval.run_visual_benchmark \
   --use-litellm --access-mode mixed --max-steps 20 \
   --judge-model openrouter/google/gemma-4-31b-it \
   --results-dir agentcibench_release/e2e-results</pre>
-  <div class="darkrow">
-    <a class="btn btn-on-dark" href="https://github.com/UKPLab/arxiv2026-agentcibench">GitHub</a>
-    <a class="btn btn-on-dark-outline" href="#">arXiv preprint</a>
-    <a class="btn btn-on-dark-outline" href="https://huggingface.co/datasets/UKPLab/agentcibench">Scenario pool v1</a>
-    <a class="btn btn-on-dark-outline" href="https://huggingface.co/datasets/UKPLab/agentcibench">Logs &amp; aggregates</a>
-  </div>
 </section>
 
 <section id="paper" class="block">
   <h2>Paper &amp; citation</h2>
   <p>
     <strong>Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?</strong>
-    Preprint release. arXiv citation details forthcoming.
+    Preprint available on <a href="https://arxiv.org/abs/2606.23189">arXiv:2606.23189</a>.
   </p>
   <pre class="bibcard">@inproceedings{agentcibench2026,
   title  = {Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?},
@@ -156,10 +154,9 @@ uv run python -m eval.run_visual_benchmark \
 
 <footer>
   <div class="footrow">
-    <a href="#">arXiv</a>
+    <a href="https://arxiv.org/abs/2606.23189">arXiv</a>
     <a href="https://github.com/UKPLab/arxiv2026-agentcibench">GitHub</a>
     <a href="https://huggingface.co/datasets/UKPLab/agentcibench">Scenario pool</a>
-    <a href="#">OpenApps</a>
     <a href="analysis.html">Analysis</a>
     <a href="#paper">BibTeX</a>
     <span class="sep">·</span>
