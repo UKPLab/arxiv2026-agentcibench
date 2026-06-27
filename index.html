@@ -38,6 +38,7 @@
   <div class="herolinks">
     <a class="btn btn-primary" href="https://arxiv.org/abs/2606.23189">arXiv preprint</a>
     <a class="btn btn-secondary" href="https://huggingface.co/datasets/UKPLab/agentcibench">Hugging Face dataset</a>
+    <a class="btn btn-secondary" href="analysis.html">Analysis &amp; trajectories →</a>
   </div>
   <div class="install-pill" id="installPill">
     <span class="prompt">$</span>
@@ -49,8 +50,7 @@
 <section id="leaderboard" class="block">
   <h2>Leaderboard</h2>
   <p>
-    State-grounded results on the released scenario pool, paired across every agent. Refusal masks raw
-    leakage, so the primary disclosure metric is engagement-conditioned leakage
+    Refusal masks raw leakage, so the primary disclosure metric is engagement-conditioned leakage
     <span class="kt">L<sub>eng</sub> = L / (1 − R)</span>. Click any column to sort.
   </p>
   <div class="filters">
@@ -73,11 +73,8 @@
     </div>
   </div>
   <p class="caption">
-    Results are computed from the released benchmark artifacts. 95% bootstrap CIs are shown next to raw leakage.
-    The main takeaway is that task-completion utility does not predict disclosure restraint.
-  </p>
-  <p>
-    Continue to the <a href="analysis.html">analysis page</a> for the Pareto plot, end-to-end UI trajectories, side-by-side model output comparisons, and the defense sweep.
+    95% bootstrap CIs shown next to raw leakage. Utility does not predict disclosure restraint —
+    see the <a href="analysis.html">analysis page</a> for the Pareto plot, trajectories, and mitigations.
   </p>
 </section>
 
@@ -85,9 +82,8 @@
   <h2>What AgentCIBench measures</h2>
   <p>
     Each scenario is a tuple <code>(state, prompt, recipient, must_share, must_not_share)</code>.
-    The agent reads the user's app state, emits the externally visible output, and the harness scores
-    that output against the share/leak sets using a deterministic matcher plus an LLM judge. The
-    evaluated agents are never in the generation loop.
+    The agent emits an externally visible output; the harness scores it against the share/leak
+    sets using a deterministic matcher plus an LLM judge.
   </p>
   <div class="harness-flow">
     <div class="hbox"><span class="hk">1</span><strong>28 seeds</strong><span>Hand-authored seed scenarios over everyday personal-assistant tasks.</span></div>
@@ -99,17 +95,16 @@
     <div class="hbox"><span class="hk">4</span><strong>Hybrid scorer</strong><span>Deterministic matcher + LLM judge merged conservatively into a single leak set.</span></div>
   </div>
   <p class="callout">
-    The released artifact is the generation pipeline plus the curated scenario pool —
-    not a frozen annotation set. The scenario pool can be regenerated or extended as proxy
-    models and frontier agents change.
+    The release is a generation pipeline plus a curated scenario pool — not a frozen
+    annotation set. The pool can be regenerated or extended over time.
   </p>
 </section>
 
 <section id="run" class="block dark">
   <h2>Run AgentCIBench on your agent</h2>
   <p>
-    Drop in an agent, point the harness at the scenario pool, and get utility, raw leakage,
-    refusal, and engaged-leakage numbers in the same format as the table above.
+    Drop in an agent, point the harness at the scenario pool, and get the same metrics as
+    the table above.
   </p>
   <pre class="codecard dark"><span class="comment"># 1. clone the public release</span>
 git clone https://github.com/UKPLab/arxiv2026-agentcibench.git

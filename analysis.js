@@ -130,7 +130,6 @@ function renderMode(mode) {
   document.getElementById('modePane').innerHTML = `
     <div class="modepane">
       <div class="modepanetext">
-        <div class="modeline"><span class="key">scenario_id</span><code>${escapeHtml(m.sid)}</code></div>
         <div class="modeline"><span class="key">failure_mode</span><span class="tag">${escapeHtml(mode)}</span></div>
         <div class="modeline"><span class="key">task_prompt</span><em>"${escapeHtml(m.prompt)}"</em></div>
         <div class="modeline"><span class="key">must_share</span><span>${m.must_share.map(t => `<span class="pill-must">${escapeHtml(t)}</span>`).join(' ')}</span></div>
@@ -377,7 +376,6 @@ function initCompare() {
     const sid = cmpScenario.value;
     const meta = SCENARIO_META[sid];
     document.getElementById('scenarioBox').innerHTML = `
-      <div class="field"><span class="key">scenario_id</span><code>${escapeHtml(sid)}</code></div>
       <div class="field"><span class="key">mode</span><span class="tag">${meta.mode}</span></div>
       <div class="field"><span class="key">state</span><span>${meta.state.map(s => `<code style="display:block;font-size:12px;color:#525252;margin:2px 0">${escapeHtml(s)}</code>`).join('')}</span></div>
       <div class="field"><span class="key">prompt</span><span><em>"${escapeHtml(meta.prompt)}"</em></span></div>

@@ -33,16 +33,15 @@
   <p class="eyebrow">Analysis</p>
   <h1>What frontier agents actually leak.</h1>
   <p class="lede">
-    Failure modes, paired comparisons, end-to-end UI trajectories, and three mitigations
-    that reduce leakage without hurting utility.
+    Capability gains have not translated into restraint. Even the best agents disclose private
+    context to the wrong recipient on a meaningful fraction of everyday tasks.
   </p>
 </section>
 
 <section id="modes" class="block">
   <h2>Three failure modes</h2>
   <p>
-    Each scenario instantiates one CI-grounded failure mode. Below is one representative
-    scenario per mode, rendered as the OpenApps surface the agent actually sees.
+    One representative scenario per mode, rendered as the surface the agent sees.
   </p>
   <div class="modetabs">
     <button class="modetab active" data-mode="VCL">VCL — Visual co-location</button>
@@ -55,26 +54,20 @@
 <section id="pareto" class="block">
   <h2>Utility vs disclosure restraint</h2>
   <p>
-    Task-completion utility does not predict disclosure restraint. Among agents with
-    <span class="kt">U &gt; 75%</span>, engaged leakage spans 14.0% (Claude-Opus-4.7)
-    to 98.3% (Gemini-3.1-Pro) — an 84-point spread.
-    Marker area scales with refusal rate; the dashed lines are at U=75 and L<sub>eng</sub>=50.
+    Among agents above 75% utility, engaged leakage spans an 84-point range.
+    Marker area scales with refusal rate.
   </p>
   <div class="chartcard">
     <div id="pareto-chart"></div>
     <div class="legend" id="pareto-legend"></div>
   </div>
-  <p class="caption">
-    Only Claude-Opus-4.7 sits in the "capable &amp; careful" quadrant.
-    GPT-5.4 reaches comparatively low leakage mainly via a 41.9% refusal rate (large marker, lower left).
-  </p>
 </section>
 
 <section id="trajectory" class="block">
   <h2>End-to-end trajectory viewer</h2>
   <p>
-    Runs from the deployment study, replayed step-by-step from the OpenApps screenshots
-    saved by the harness and paired with each run's final judge verdict.
+    Step through real runs from the deployment study. Walk to the final step to reveal the
+    agent's sent message and the judge's verdict.
   </p>
 
   <div class="trajviewer">
@@ -125,9 +118,8 @@
 <section id="compare" class="block">
   <h2>Compare model outputs</h2>
   <p>
-    Same scenario, two agents, side-by-side. Outputs are taken verbatim from
-    the released run artifacts: the literal <code>shared_content</code> the agent emitted, with must-share items highlighted in
-    green and must-not-share items highlighted in red.
+    Same scenario, two agents, side-by-side. Must-share items are highlighted in green;
+    must-not-share items in red.
   </p>
   <div class="comparepicker">
     <label>Scenario<select id="cmpScenario"></select></label>
@@ -144,9 +136,8 @@
 <section id="defenses" class="block">
   <h2>Mitigations</h2>
   <p>
-    Three prompt-level defenses, swept across Claude-Opus-4.7, GPT-5.4, and DeepSeek-v4-Pro
-    (the three models that span the disclosure distribution). Engaged leakage drops by 33–36
-    points; utility rises by 16–23 points. The defenses are not a refusal-style intervention.
+    Three prompt-level defenses cut engaged leakage by 33–36 points while raising utility by
+    16–23 — without relying on refusals.
   </p>
 
   <div class="defenselist">
@@ -172,15 +163,10 @@
 <section id="e2e" class="block">
   <h2>Does disclosure transfer to live UI?</h2>
   <p>
-    Claude-Opus-4.7 and Claude-Sonnet-4.6 — the two lowest-leakage agents in the
-    state-grounded table — were deployed end-to-end in the rendered OpenApps UI on a
-    50-scenario stratified subset. On engaged runs, leakage stays at or above the
-    state-grounded baseline for both agents.
+    The two lowest-leakage agents were deployed end-to-end in the rendered OpenApps UI on a
+    50-scenario subset. Leakage on engaged runs matches or exceeds the state-grounded baseline.
   </p>
   <div class="e2egrid" id="e2eGrid"></div>
-  <p class="caption">
-    State-grounded and end-to-end measurements are reported from the same benchmark scoring protocol.
-  </p>
 </section>
 
 </main>
