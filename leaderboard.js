@@ -14,7 +14,11 @@ function logoPath(family){ return `../figures/logos/${family}.png`; }
 
 function renderLB() {
   const rows = AGENTS
-    .filter(a => lbState.group === 'all' ? true : a.group === lbState.group)
+    .filter(a => {
+      if (lbState.group === 'all') return true;
+      if (lbState.group === 'post') return !!a.post;
+      return a.group === lbState.group;
+    })
     .slice()
     .sort((a,b) => {
       const k = lbState.sortKey;
@@ -33,7 +37,7 @@ function renderLB() {
       <div class="rank">${i+1}</div>
       <div class="model-cell">
         <img class="mlogo" src="${logoPath(r.family)}" alt="" onerror="this.style.display='none'"/>
-        <code>${r.model}</code>
+        <code>${r.model}</code>${r.post ? '<span class="tag-new" title="Released after paper submission; evaluated 2026-07 on the unchanged scenario pool">new</span>' : ''}
       </div>
       <div><span class="${r.group==='prop'?'tag-prop':'tag-open'}">${r.group==='prop'?'Proprietary':'Open'}</span></div>
       <div class="metric-cell"><span class="bar blue"><span class="b" style="width:${r.util}%"></span></span><span class="value">${r.util.toFixed(1)}%</span></div>

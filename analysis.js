@@ -167,7 +167,8 @@ function initPareto() {
   AGENTS.forEach((a,i) => {
     const c = FAMILY_COLORS[a.family] || '#000';
     const r = 5 + Math.sqrt(a.refusal) * 1.6;
-    svg.push(`<circle cx="${xs(a.util)}" cy="${ys(a.eng)}" r="${r}" fill="${c}" fill-opacity="0.6" stroke="${c}" stroke-width="1" data-i="${i}" class="pt"/>`);
+    const dash = a.post ? ' stroke-dasharray="3 2" stroke-width="1.6"' : ' stroke-width="1"';
+    svg.push(`<circle cx="${xs(a.util)}" cy="${ys(a.eng)}" r="${r}" fill="${c}" fill-opacity="0.6" stroke="${c}"${dash} data-i="${i}" class="pt"/>`);
   });
 
   const labels = [
@@ -180,6 +181,7 @@ function initPareto() {
     { m:"DeepSeek-v4-Pro", dx:-8, dy:-10, anchor:"end" },
     { m:"Claude-Sonnet-4.6", dx:8, dy:0 },
     { m:"Kimi-K2.6",       dx:8, dy:-8 },
+    { m:"GPT-5.6-terra",   dx:10, dy:4 },
   ];
   labels.forEach(l => {
     const a = AGENTS.find(x => x.model === l.m);

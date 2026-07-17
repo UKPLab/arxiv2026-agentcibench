@@ -263,6 +263,7 @@ main { max-width:960px; margin:0 auto; padding:0 24px; }
 .caption { font-size:13px; color:var(--mute); margin-top:12px; }
 .tag-prop { font-size:11px; padding:2px 8px; border-radius:9999px; background:var(--surface-soft); color:var(--charcoal); }
 .tag-open { font-size:11px; padding:2px 8px; border-radius:9999px; background:#eef5ff; color:#2c5fae; }
+.tag-new  { font-size:10px; padding:1px 6px; border-radius:9999px; background:#eafaf0; color:#1e7a45; margin-left:6px; font-weight:600; letter-spacing:0.02em; vertical-align:middle; }
 
 .ci { font-size:11px; color:var(--mute); font-variant-numeric:tabular-nums; white-space:nowrap; }
 

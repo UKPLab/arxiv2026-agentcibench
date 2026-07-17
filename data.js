@@ -16,6 +16,17 @@ window.AGENTS = [
   { model:"Kimi-K2.6",          family:"moonshot",  group:"open", util:43.59,leak:62.39, refusal:22.22,eng:80.22, ci:[53.8,70.9] },
   { model:"DeepSeek-v4-Pro",    family:"deepseek",  group:"open", util:64.1, leak:82.91, refusal:2.56, eng:85.09, ci:[76.1,89.7] },
   { model:"GLM-5.1",            family:"zhipu",     group:"open", util:57.26,leak:85.47, refusal:4.27, eng:89.29, ci:[78.6,91.5] },
+
+  // Post-submission additions (temporal holdout): released after the paper was
+  // submitted, evaluated 2026-07 on the unchanged 117-scenario pool with the
+  // identical judge and settings. These models cannot have influenced scenario
+  // generation in any way.
+  { model:"GPT-5.6-terra",      family:"openai",    group:"prop", util:69.23,leak:23.08, refusal:17.95,eng:28.12, ci:[15.4,30.8], post:true },
+  { model:"GPT-5.6-sol",        family:"openai",    group:"prop", util:64.96,leak:33.33, refusal:10.26,eng:37.14, ci:[24.8,41.9], post:true },
+  { model:"GPT-5.6-luna",       family:"openai",    group:"prop", util:70.09,leak:38.46, refusal:14.53,eng:45.00, ci:[29.9,47.0], post:true },
+  { model:"Claude-Sonnet-5",    family:"anthropic", group:"prop", util:91.45,leak:58.97, refusal:0.85, eng:59.48, ci:[50.4,67.5], post:true },
+  { model:"GLM-5.2",            family:"zhipu",     group:"open", util:57.26,leak:76.07, refusal:6.84, eng:81.65, ci:[68.4,83.8], post:true },
+  { model:"Kimi-K3",            family:"moonshot",  group:"open", util:66.67,leak:48.72, refusal:2.56, eng:50.00, ci:[40.2,57.3], post:true },
 ];
 
 window.FAMILY_COLORS = {
